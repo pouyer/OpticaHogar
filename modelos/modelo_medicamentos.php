@@ -1,0 +1,514 @@
+<?php
+    /**
+     * Modelo para la tabla medicamentos     */
+require_once '../conexion.php';
+
+class ModeloMedicamentos {
+    private $conexion;
+    private $llavePrimaria = 'id';
+    private $es_vista = false;
+
+    public function __construct() {
+        global $conexion;
+        $this->conexion = $conexion;
+    }
+
+    // Métodos para obtener datos relacionados (Comboboxes)
+
+    // Función para contar registros
+    public function contarRegistros() {
+        $query = "SELECT COUNT(*) as total FROM medicamentos";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_assoc()['total'] : 0;
+    }
+
+    // Función de contarRegistrosPorBusqueda
+    public function contarRegistrosPorBusqueda($termino) {
+        $query = "SELECT COUNT(*) as total FROM medicamentos ";
+        $query .= " WHERE ";
+        $query .= "CONCAT_WS(' ', `medicamentos`.`id`, `medicamentos`.`nombre`, `medicamentos`.`principio_activo`, `medicamentos`.`concentracion`, `medicamentos`.`presentacion`, `medicamentos`.`via_administracion`, `medicamentos`.`indicaciones`, `medicamentos`.`contraindicaciones`, `medicamentos`.`estado`, `medicamentos`.`usuario_id_inserto`, `medicamentos`.`fecha_insercion`, `medicamentos`.`usuario_id_actualizo`, `medicamentos`.`fecha_actualizacion`) LIKE ?";
+        $stmt = $this->conexion->prepare($query);
+        $termino = "%" . $termino . "%";
+        $stmt->bind_param('s', $termino);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_assoc()['total'] : false;
+    }
+
+    // Obtener todos los registros
+    public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+        // Validar columnas permitidas para evitar inyección SQL
+        $allowedColumns = ['`medicamentos`.`id`', '`medicamentos`.`nombre`', '`medicamentos`.`principio_activo`', '`medicamentos`.`concentracion`', '`medicamentos`.`presentacion`', '`medicamentos`.`via_administracion`', '`medicamentos`.`indicaciones`', '`medicamentos`.`contraindicaciones`', '`medicamentos`.`estado`', '`medicamentos`.`usuario_id_inserto`', '`medicamentos`.`fecha_insercion`', '`medicamentos`.`usuario_id_actualizo`', '`medicamentos`.`fecha_actualizacion`'];
+        
+        $orderSQL = "";
+        $esValidoOrden = false;
+        if (!empty($orderBy)) {
+            $orderByClean = str_replace(['`', ' '], '', $orderBy);
+            foreach($allowedColumns as $ac) {
+                if (str_replace(['`', ' '], '', $ac) === $orderByClean) {
+                    $esValidoOrden = true;
+                    break;
+                }
+            }
+            if ($esValidoOrden) {
+                $orderSQL = " ORDER BY $orderBy $orderDir ";
+            }
+        }
+
+        if (empty($orderSQL)) {
+            // Usar ordenamiento predeterminado (hasta 3 niveles)
+            $orderSQL = " ORDER BY `medicamentos`.`estado` ASC, `medicamentos`.`nombre` ASC, `medicamentos`.`principio_activo` ASC ";
+        }
+
+        $query = "SELECT `medicamentos`.*  FROM medicamentos";
+        $query .= $orderSQL;
+        $query .= " LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bind_param('ii', $registrosPorPagina, $offset);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : false;
+    }
+
+    // Obtener un registro por llave primaria
+    public function obtenerPorId($id) {
+        $query = "SELECT `medicamentos`.*  FROM medicamentos";
+        $query .= " WHERE `medicamentos`.$this->llavePrimaria = ?";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_assoc() : false;
+    }
+
+    // Crear un nuevo registro
+    public function crear($datos) {
+        $campos = [];
+        $valores = [];
+        $tipos = '';
+        $params = [];
+
+        // Campo: nombre
+        if (!isset($datos['nombre']) || $datos['nombre'] === '') {
+            throw new Exception('El campo nombre es requerido.');
+        }
+        if (array_key_exists('nombre', $datos)) {
+            $campos[] = '`nombre`';
+            $valores[] = '?';
+            $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
+            $tipos .= 's';
+        }
+        // Campo: principio_activo
+        if (array_key_exists('principio_activo', $datos)) {
+            $campos[] = '`principio_activo`';
+            $valores[] = '?';
+            $params[] = ($datos['principio_activo'] === '' || $datos['principio_activo'] === null) ? '' : $datos['principio_activo'];
+            $tipos .= 's';
+        }
+        // Campo: concentracion
+        if (array_key_exists('concentracion', $datos)) {
+            $campos[] = '`concentracion`';
+            $valores[] = '?';
+            $params[] = ($datos['concentracion'] === '' || $datos['concentracion'] === null) ? '' : $datos['concentracion'];
+            $tipos .= 's';
+        }
+        // Campo: presentacion
+        if (array_key_exists('presentacion', $datos)) {
+            $campos[] = '`presentacion`';
+            $valores[] = '?';
+            $params[] = ($datos['presentacion'] === '' || $datos['presentacion'] === null) ? '' : $datos['presentacion'];
+            $tipos .= 's';
+        }
+        // Campo: via_administracion
+        if (array_key_exists('via_administracion', $datos)) {
+            $campos[] = '`via_administracion`';
+            $valores[] = '?';
+            $params[] = ($datos['via_administracion'] === '' || $datos['via_administracion'] === null) ? '' : $datos['via_administracion'];
+            $tipos .= 's';
+        }
+        // Campo: indicaciones
+        if (array_key_exists('indicaciones', $datos)) {
+            $campos[] = '`indicaciones`';
+            $valores[] = '?';
+            $params[] = ($datos['indicaciones'] === '' || $datos['indicaciones'] === null) ? '' : $datos['indicaciones'];
+            $tipos .= 's';
+        }
+        // Campo: contraindicaciones
+        if (array_key_exists('contraindicaciones', $datos)) {
+            $campos[] = '`contraindicaciones`';
+            $valores[] = '?';
+            $params[] = ($datos['contraindicaciones'] === '' || $datos['contraindicaciones'] === null) ? '' : $datos['contraindicaciones'];
+            $tipos .= 's';
+        }
+        // Campo: estado
+        if (array_key_exists('estado', $datos)) {
+            $campos[] = '`estado`';
+            $valores[] = '?';
+            $params[] = ($datos['estado'] === '' || $datos['estado'] === null) ? '' : $datos['estado'];
+            $tipos .= 's';
+        }
+        // Campo: usuario_id_inserto
+        if (array_key_exists('usuario_id_inserto', $datos)) {
+            $campos[] = '`usuario_id_inserto`';
+            $valores[] = '?';
+            $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
+            $tipos .= 'i';
+        }
+        // Campo: fecha_insercion
+        if (array_key_exists('fecha_insercion', $datos)) {
+            $campos[] = '`fecha_insercion`';
+            $valores[] = '?';
+            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
+            $tipos .= 's';
+        }
+        // Campo: usuario_id_actualizo
+        if (array_key_exists('usuario_id_actualizo', $datos)) {
+            $campos[] = '`usuario_id_actualizo`';
+            $valores[] = '?';
+            $params[] = ($datos['usuario_id_actualizo'] === '' || $datos['usuario_id_actualizo'] === null) ? null : (int)$datos['usuario_id_actualizo'];
+            $tipos .= 'i';
+        }
+        // Campo: fecha_actualizacion
+        if (array_key_exists('fecha_actualizacion', $datos)) {
+            $campos[] = '`fecha_actualizacion`';
+            $valores[] = '?';
+            $params[] = ($datos['fecha_actualizacion'] === '' || $datos['fecha_actualizacion'] === null) ? '' : $datos['fecha_actualizacion'];
+            $tipos .= 's';
+        }
+
+        $query = "INSERT INTO medicamentos (" . implode(', ', $campos) . ") VALUES (" . implode(', ', $valores) . ")";
+        $stmt = $this->conexion->prepare($query);
+        if (!empty($params)) {
+             if(!$stmt) throw new Exception("Error preparando insert: " . $this->conexion->error);
+            $stmt->bind_param($tipos, ...$params);
+        }
+        return $stmt->execute();
+    }
+
+    public function actualizar($id, $datos) {
+        $actualizaciones = [];
+        $tipos = '';
+        $tipos_pk = 'i'; // Para la llave primaria
+        $params = [];
+
+        // Campo: nombre
+        if (array_key_exists('nombre', $datos) && $datos['nombre'] === '') {
+            throw new Exception('El campo nombre es requerido.');
+        }
+        if (array_key_exists('nombre', $datos)) {
+            $actualizaciones[] = "`nombre` = ?";
+            $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
+            $tipos .= 's';
+        }
+        // Campo: principio_activo
+        if (array_key_exists('principio_activo', $datos)) {
+            $actualizaciones[] = "`principio_activo` = ?";
+            $params[] = ($datos['principio_activo'] === '' || $datos['principio_activo'] === null) ? '' : $datos['principio_activo'];
+            $tipos .= 's';
+        }
+        // Campo: concentracion
+        if (array_key_exists('concentracion', $datos)) {
+            $actualizaciones[] = "`concentracion` = ?";
+            $params[] = ($datos['concentracion'] === '' || $datos['concentracion'] === null) ? '' : $datos['concentracion'];
+            $tipos .= 's';
+        }
+        // Campo: presentacion
+        if (array_key_exists('presentacion', $datos)) {
+            $actualizaciones[] = "`presentacion` = ?";
+            $params[] = ($datos['presentacion'] === '' || $datos['presentacion'] === null) ? '' : $datos['presentacion'];
+            $tipos .= 's';
+        }
+        // Campo: via_administracion
+        if (array_key_exists('via_administracion', $datos)) {
+            $actualizaciones[] = "`via_administracion` = ?";
+            $params[] = ($datos['via_administracion'] === '' || $datos['via_administracion'] === null) ? '' : $datos['via_administracion'];
+            $tipos .= 's';
+        }
+        // Campo: indicaciones
+        if (array_key_exists('indicaciones', $datos)) {
+            $actualizaciones[] = "`indicaciones` = ?";
+            $params[] = ($datos['indicaciones'] === '' || $datos['indicaciones'] === null) ? '' : $datos['indicaciones'];
+            $tipos .= 's';
+        }
+        // Campo: contraindicaciones
+        if (array_key_exists('contraindicaciones', $datos)) {
+            $actualizaciones[] = "`contraindicaciones` = ?";
+            $params[] = ($datos['contraindicaciones'] === '' || $datos['contraindicaciones'] === null) ? '' : $datos['contraindicaciones'];
+            $tipos .= 's';
+        }
+        // Campo: estado
+        if (array_key_exists('estado', $datos)) {
+            $actualizaciones[] = "`estado` = ?";
+            $params[] = ($datos['estado'] === '' || $datos['estado'] === null) ? '' : $datos['estado'];
+            $tipos .= 's';
+        }
+        // Campo: usuario_id_inserto
+        if (array_key_exists('usuario_id_inserto', $datos)) {
+            $actualizaciones[] = "`usuario_id_inserto` = ?";
+            $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
+            $tipos .= 'i';
+        }
+        // Campo: fecha_insercion
+        if (array_key_exists('fecha_insercion', $datos)) {
+            $actualizaciones[] = "`fecha_insercion` = ?";
+            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
+            $tipos .= 's';
+        }
+        // Campo: usuario_id_actualizo
+        if (array_key_exists('usuario_id_actualizo', $datos)) {
+            $actualizaciones[] = "`usuario_id_actualizo` = ?";
+            $params[] = ($datos['usuario_id_actualizo'] === '' || $datos['usuario_id_actualizo'] === null) ? null : (int)$datos['usuario_id_actualizo'];
+            $tipos .= 'i';
+        }
+        // Campo: fecha_actualizacion
+        if (array_key_exists('fecha_actualizacion', $datos)) {
+            $actualizaciones[] = "`fecha_actualizacion` = ?";
+            $params[] = ($datos['fecha_actualizacion'] === '' || $datos['fecha_actualizacion'] === null) ? '' : $datos['fecha_actualizacion'];
+            $tipos .= 's';
+        }
+
+        $params[] = $id;
+        $tipos .= $tipos_pk;
+        $query = "UPDATE medicamentos SET " . implode(', ', $actualizaciones) . " WHERE $this->llavePrimaria = ?";
+        $stmt = $this->conexion->prepare($query);
+        if (!empty($params)) {
+             if(!$stmt) throw new Exception("Error preparando update: " . $this->conexion->error);
+            $stmt->bind_param($tipos, ...$params);
+        }
+        return $stmt->execute();
+    }
+
+    // Eliminar un registro
+    public function eliminar($id) {
+        $query = "DELETE FROM medicamentos WHERE $this->llavePrimaria = ?";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bind_param('i', $id);
+        return $stmt->execute();
+    }
+
+    // Función de búsqueda (reutilizada)
+    public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+        // Validar columnas permitidas
+        $allowedColumns = ['`medicamentos`.`id`', '`medicamentos`.`nombre`', '`medicamentos`.`principio_activo`', '`medicamentos`.`concentracion`', '`medicamentos`.`presentacion`', '`medicamentos`.`via_administracion`', '`medicamentos`.`indicaciones`', '`medicamentos`.`contraindicaciones`', '`medicamentos`.`estado`', '`medicamentos`.`usuario_id_inserto`', '`medicamentos`.`fecha_insercion`', '`medicamentos`.`usuario_id_actualizo`', '`medicamentos`.`fecha_actualizacion`'];
+        
+        $orderSQL = "";
+        $esValidoOrden = false;
+        if (!empty($orderBy)) {
+            $orderByClean = str_replace(['`', ' '], '', $orderBy);
+            foreach($allowedColumns as $ac) {
+                if (str_replace(['`', ' '], '', $ac) === $orderByClean) {
+                    $esValidoOrden = true;
+                    break;
+                }
+            }
+            if ($esValidoOrden) {
+                $orderSQL = " ORDER BY $orderBy $orderDir ";
+            }
+        }
+
+        if (empty($orderSQL)) {
+            $orderSQL = " ORDER BY `medicamentos`.`estado` ASC, `medicamentos`.`nombre` ASC, `medicamentos`.`principio_activo` ASC ";
+        }
+
+        $query = "SELECT `medicamentos`.*  FROM medicamentos";
+        $query .= " WHERE ";
+        $query .= "CONCAT_WS(' ', `medicamentos`.`id`, `medicamentos`.`nombre`, `medicamentos`.`principio_activo`, `medicamentos`.`concentracion`, `medicamentos`.`presentacion`, `medicamentos`.`via_administracion`, `medicamentos`.`indicaciones`, `medicamentos`.`contraindicaciones`, `medicamentos`.`estado`, `medicamentos`.`usuario_id_inserto`, `medicamentos`.`fecha_insercion`, `medicamentos`.`usuario_id_actualizo`, `medicamentos`.`fecha_actualizacion`) LIKE ?";
+        $query .= $orderSQL;
+        $query .= " LIMIT ? OFFSET ?";
+        
+        $stmt = $this->conexion->prepare($query);
+        $termino = "%" . $termino . "%";
+        $stmt->bind_param('sii', $termino, $registrosPorPagina, $offset);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : false;
+    }
+
+    // --- Métodos para Vistas (Búsqueda por Campo) ---
+
+    public function contarPorCampo($campo, $valor) {
+        // Validar campo
+        $allowedColumns = ['`medicamentos`.`id`', '`medicamentos`.`nombre`', '`medicamentos`.`principio_activo`', '`medicamentos`.`concentracion`', '`medicamentos`.`presentacion`', '`medicamentos`.`via_administracion`', '`medicamentos`.`indicaciones`', '`medicamentos`.`contraindicaciones`', '`medicamentos`.`estado`', '`medicamentos`.`usuario_id_inserto`', '`medicamentos`.`fecha_insercion`', '`medicamentos`.`usuario_id_actualizo`', '`medicamentos`.`fecha_actualizacion`'];
+        // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
+        $simpleCols = ['id', 'nombre', 'principio_activo', 'concentracion', 'presentacion', 'via_administracion', 'indicaciones', 'contraindicaciones', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        
+        $campoLimpio = str_replace(['`', ' '], '', $campo);
+        $esValido = false;
+        $columnaSQL = '';
+
+        // Mapear input simple a columna calificada
+        foreach ($simpleCols as $idx => $sc) {
+            if ($sc === $campo) {
+                 $esValido = true;
+                 $columnaSQL = "`medicamentos`.`" . $campo . "`";
+                 break;
+            }
+        }
+        if (!$esValido) {
+             foreach($allowedColumns as $ac) {
+                if (str_replace(['`', ' '], '', $ac) === $campoLimpio) {
+                    $esValido = true;
+                    $columnaSQL = $campo;
+                    break;
+                }
+             }
+        }
+
+        if (!$esValido) return 0;
+
+        $query = "SELECT COUNT(*) as total FROM medicamentos ";
+        $query .= " WHERE " . $columnaSQL . " LIKE ?";
+        
+        $stmt = $this->conexion->prepare($query);
+        $valor = "%" . $valor . "%";
+        $stmt->bind_param('s', $valor);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_assoc()['total'] : 0;
+    }
+
+    public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+        // Validación de campo idéntica a contarPorCampo
+        $allowedColumns = ['`medicamentos`.`id`', '`medicamentos`.`nombre`', '`medicamentos`.`principio_activo`', '`medicamentos`.`concentracion`', '`medicamentos`.`presentacion`', '`medicamentos`.`via_administracion`', '`medicamentos`.`indicaciones`', '`medicamentos`.`contraindicaciones`', '`medicamentos`.`estado`', '`medicamentos`.`usuario_id_inserto`', '`medicamentos`.`fecha_insercion`', '`medicamentos`.`usuario_id_actualizo`', '`medicamentos`.`fecha_actualizacion`'];
+        $simpleCols = ['id', 'nombre', 'principio_activo', 'concentracion', 'presentacion', 'via_administracion', 'indicaciones', 'contraindicaciones', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        
+        $campoLimpio = str_replace(['`', ' '], '', $campo);
+        $esValido = false;
+        $columnaSQL = '';
+
+        foreach ($simpleCols as $idx => $sc) {
+            if ($sc === $campo) {
+                 $esValido = true;
+                 $columnaSQL = "`medicamentos`.`" . $campo . "`";
+                 break;
+            }
+        }
+        if (!$esValido) {
+             foreach($allowedColumns as $ac) {
+                if (str_replace(['`', ' '], '', $ac) === $campoLimpio) {
+                    $esValido = true;
+                    $columnaSQL = $campo;
+                    break;
+                }
+             }
+        }
+        if (!$esValido) return [];
+
+        // Validación OrderBy
+        $orderSQL = "";
+        $esValidoOrden = false;
+        if (!empty($orderBy)) {
+            $orderByClean = str_replace(['`', ' '], '', $orderBy);
+            foreach($allowedColumns as $ac) {
+                if (str_replace(['`', ' '], '', $ac) === $orderByClean) {
+                    $esValidoOrden = true;
+                    break;
+                }
+            }
+            if ($esValidoOrden) {
+                $orderSQL = " ORDER BY $orderBy $orderDir ";
+            }
+        }
+        
+        if (empty($orderSQL)) {
+             $orderSQL = " ORDER BY `medicamentos`.`estado` ASC, `medicamentos`.`nombre` ASC, `medicamentos`.`principio_activo` ASC ";
+        }
+
+        $query = "SELECT `medicamentos`.*  FROM medicamentos";
+        $query .= " WHERE " . $columnaSQL . " LIKE ?";
+        $query .= $orderSQL;
+        $query .= " LIMIT ? OFFSET ?";
+        
+        $stmt = $this->conexion->prepare($query);
+        $valor = "%" . $valor . "%";
+        $stmt->bind_param('sii', $valor, $registrosPorPagina, $offset);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : false;
+    }
+
+    // Funcion de exportar datos
+    public function exportarDatos($termino = '', $campoFiltro = '') {
+        try {
+            $query = "SELECT `medicamentos`.`nombre`, `medicamentos`.`principio_activo`, `medicamentos`.`concentracion`, `medicamentos`.`presentacion`, `medicamentos`.`via_administracion`, `medicamentos`.`indicaciones`, `medicamentos`.`contraindicaciones`, `medicamentos`.`estado`, `medicamentos`.`usuario_id_inserto`, `medicamentos`.`fecha_insercion`, `medicamentos`.`usuario_id_actualizo`, `medicamentos`.`fecha_actualizacion` FROM medicamentos";
+            $query .= " WHERE ";
+            
+            $usarFiltroCampo = false;
+            $columnaSQL = '';
+
+            if (!empty($campoFiltro)) {
+                 // Validar campo
+                $allowedColumns = ['`medicamentos`.`id`', '`medicamentos`.`nombre`', '`medicamentos`.`principio_activo`', '`medicamentos`.`concentracion`', '`medicamentos`.`presentacion`', '`medicamentos`.`via_administracion`', '`medicamentos`.`indicaciones`', '`medicamentos`.`contraindicaciones`', '`medicamentos`.`estado`', '`medicamentos`.`usuario_id_inserto`', '`medicamentos`.`fecha_insercion`', '`medicamentos`.`usuario_id_actualizo`', '`medicamentos`.`fecha_actualizacion`'];
+                $simpleCols = ['id', 'nombre', 'principio_activo', 'concentracion', 'presentacion', 'via_administracion', 'indicaciones', 'contraindicaciones', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+                
+                $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
+                
+                foreach ($simpleCols as $idx => $sc) {
+                    if ($sc === $campoFiltro) {
+                         $usarFiltroCampo = true;
+                         $columnaSQL = "`medicamentos`.`" . $campoFiltro . "`";
+                         break;
+                    }
+                }
+                if (!$usarFiltroCampo) {
+                     foreach($allowedColumns as $ac) {
+                        if (str_replace(['`', ' '], '', $ac) === $campoLimpio) {
+                            $usarFiltroCampo = true;
+                            $columnaSQL = $campoFiltro;
+                            break;
+                        }
+                     }
+                }
+            }
+
+            if ($usarFiltroCampo) {
+                 $query .= $columnaSQL . " LIKE ?";
+            } else {
+                $query .= "CONCAT_WS(' ', `medicamentos`.`id`, `medicamentos`.`nombre`, `medicamentos`.`principio_activo`, `medicamentos`.`concentracion`, `medicamentos`.`presentacion`, `medicamentos`.`via_administracion`, `medicamentos`.`indicaciones`, `medicamentos`.`contraindicaciones`, `medicamentos`.`estado`, `medicamentos`.`usuario_id_inserto`, `medicamentos`.`fecha_insercion`, `medicamentos`.`usuario_id_actualizo`, `medicamentos`.`fecha_actualizacion`) LIKE ?";
+            }
+
+            if (!$this->conexion) {
+                throw new Exception('Error: No hay conexión a la base de datos');
+            }
+
+            $stmt = $this->conexion->prepare($query);
+            if (!$stmt) {
+                throw new Exception('Error preparando la consulta: ' . $this->conexion->error);
+            }
+
+            $terminoBusqueda = empty($termino) ? '%' : '%' . $termino . '%';
+            $stmt->bind_param('s', $terminoBusqueda);
+            if (!$stmt->execute()) {
+                throw new Exception('Error ejecutando la consulta: ' . $stmt->error);
+            }
+
+            $resultado = $stmt->get_result();
+            $datos = $resultado->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+            return $datos;
+        } catch (Exception $e) {
+            error_log('Error en exportarDatos: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function obtenerEstados() {
+        $tabla = 'medicamentos';
+        $sql = "SELECT estado, nombre_estado FROM acc_estado where tabla = ? and visible = 1 order by orden";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->bind_param('s', $tabla);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        $estados = [];
+
+        if ($resultado && $resultado->num_rows > 0) {
+            while ($fila = $resultado->fetch_assoc()) {
+                $estados[] = $fila;
+            }
+        }
+        return $estados;
+    }
+}
+?>

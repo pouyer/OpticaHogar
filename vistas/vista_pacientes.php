@@ -1,0 +1,1168 @@
+<?php
+/**
+ * GeneraCRUDphp - Vista Generada
+ */
+require_once '../config/config.php';
+require_once '../accesos/verificar_sesion.php';
+
+// Cargar permisos para este programa
+$mi_programa = 'vista_pacientes.php'; // Debe coincidir con el nombre_archivo en acc_programa
+$permisos = $_SESSION['permisos'][$mi_programa] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
+
+// Cargar permisos para el programa de anamnesis para controlar la visibilidad del botón
+$programa_crea_anamnesis = 'vista_crear_anamnesis.php';
+$permisos_crea_anamnesis = $_SESSION['permisos'][$programa_crea_anamnesis] ?? null;
+
+// Generar Token CSRF de forma segura para evitar Fatal Errors en la vista
+if (function_exists('generateCSRFToken')) {
+    $csrf_token = generateCSRFToken();
+} else {
+    $csrf_token = $_SESSION['csrf_token'] ?? bin2hex(random_bytes(32));
+}
+
+$registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
+$paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes</title>
+
+    <?php include('../headIconos.php'); ?>
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        :root {
+            --primary-color: #32c8c8;
+            --primary-gradient: linear-gradient(135deg, #32c8c8 0%, #2a5298 100%);
+            --accent-color: #ff9800;
+        }
+        body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
+        .main-card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; background: white; margin-top: 2rem; }
+        .card-header-custom { background: var(--primary-gradient); color: white; padding: 1.5rem; border: none; }
+        .btn-premium { border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 600; transition: all 0.3s; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .table thead th { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .table tbody tr { transition: all 0.2s; }
+        .table tbody tr:hover { background-color: rgba(30, 60, 114, 0.03); }
+        .badge-status { border-radius: 30px; padding: 0.4em 0.8em; }
+        .pagination .page-link { border-radius: 8px; margin: 0 3px; border: none; color: var(--primary-color); font-weight: 600; }
+        .pagination .page-item.active .page-link { background: var(--primary-gradient); }
+        .search-box { border-radius: 10px 0 0 10px; border: 1px solid #dee2e6; }
+        .search-btn { border-radius: 0 10px 10px 0; background: var(--primary-color); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container pb-5">
+        
+        <div class="main-card">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0"><i class="icon-table me-2"></i> Pacientes</h3>
+                    <small class="opacity-75">Gestión de Registros</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <?php if ($permisos['exp']): ?>
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-premium dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="icon-export me-1"></i> Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=excel&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-excel text-success me-2"></i> Excel</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=csv&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-text text-primary me-2"></i> CSV</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=txt&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-doc-text-inv text-secondary me-2"></i> TXT</a></li>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
+
+                                        <?php if ($permisos['ins']): ?>
+                    <button type="button" class="btn btn-premium btn-warning text-white" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                        <i class="icon-plus me-1"></i> Nuevo Registro
+                    </button>
+                    <?php endif; ?>
+                                    </div>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- Buscador -->
+                <form method="GET" action="vista_pacientes.php" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" name="busqueda" class="form-control search-box p-2" placeholder="Buscar por cualquier campo..." value="<?php echo isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : ''; ?>">
+                        <input type="hidden" name="action" value="buscar">
+                        <input type="hidden" name="registrosPorPagina" value="<?= $registrosPorPagina ?>">
+                        <button type="submit" class="btn search-btn px-4"><i class="icon-search"></i></button>
+                        <?php if(isset($_GET['busqueda']) && $_GET['busqueda'] !== ''): ?>
+                            <a href="vista_pacientes.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+<?php
+$sort = $_GET['sort'] ?? null;
+$dir = $_GET['dir'] ?? 'DESC';
+$nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
+?>
+                                <th>ID</th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`pacientes`.`fecha_ingreso`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Fecha Ingreso                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`fecha_ingreso`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`tipos_identificacion`.`codigo`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Tipo                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`tipos_identificacion`.`codigo`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`pacientes`.`primer_nombre`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Paciente                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`primer_nombre`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`pacientes`.`telefono_principal`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Teléfono                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`telefono_principal`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`pacientes`.`email`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Email                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`email`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_paciente`.`codigo`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        Estado                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_paciente`.`codigo`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            require_once '../modelos/modelo_pacientes.php';
+                            if (file_exists('../modelos/modelo_acc_log.php')) {
+                                require_once '../modelos/modelo_acc_log.php';
+                            } elseif (file_exists('../accesos/modelos/modelo_acc_log.php')) {
+                                require_once '../accesos/modelos/modelo_acc_log.php';
+                            }
+                            $modelo = new ModeloPacientes();
+                            $modeloLog = new ModeloAcc_log();
+                            $modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'VIEW', 'pacientes', 'Acceso a la pantalla de listado');
+                            $termino = $_GET['busqueda'] ?? '';
+                            $campoFiltro = $_GET['campo'] ?? '';
+                            $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
+                            $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+                            $offset = ($paginaActual - 1) * $registrosPorPagina;
+
+                            if (isset($_GET['action']) && $_GET['action'] === 'buscar') {
+                                if (!empty($campoFiltro) && !empty($termino)) {
+                                     // Búsqueda avanzada por campo
+                                     $totalRegistros = $modelo->contarPorCampo($campoFiltro, $termino);
+                                     $registros = $modelo->buscarPorCampo($campoFiltro, $termino, $registrosPorPagina, $offset, $sort, $dir);
+                                } else {
+                                     // Búsqueda general
+                                     $totalRegistros = $modelo->contarRegistrosPorBusqueda($termino);
+                                     $registros = $modelo->buscar($termino, $registrosPorPagina, $offset, $sort, $dir);
+                                }
+                            } else {
+                                $totalRegistros = $modelo->contarRegistros();
+                                $registros = $modelo->obtenerTodos($registrosPorPagina, $offset, $sort, $dir);
+                            }
+
+                            if ($registros):
+                                // Obtener información de anamnesis para los pacientes listados
+                                $pacientes_con_anamnesis = [];
+                                if (!empty($registros)) {
+                                    $ids = implode(',', array_column($registros, 'id'));
+                                    $sqlAnam = "SELECT paciente_id, id FROM anamnesis WHERE paciente_id IN ($ids)";
+                                    $resAnam = $modelo->getConexion()->query($sqlAnam);
+                                    if ($resAnam) {
+                                        while ($rowA = $resAnam->fetch_assoc()) {
+                                            $pacientes_con_anamnesis[$rowA['paciente_id']] = $rowA['id'];
+                                        }
+                                    }
+                                }
+
+                                foreach ($registros as $registro):
+                            ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($registro['id']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['fecha_ingreso']); ?></td>
+                    <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($registro['tipo_identificacion_id_display'] ?? $registro['tipo_identificacion_id']); ?></span></td>
+                    <td>
+                        <strong><?php echo htmlspecialchars($registro['nombre_completo']); ?></strong><br>
+                        <small class="text-muted"><?php echo htmlspecialchars($registro['identificacion']); ?></small>
+                    </td>
+                    <td><?php echo htmlspecialchars($registro['telefono_principal']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['email']); ?></td>
+                    <td>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill">
+                            <?php echo htmlspecialchars($registro['estado_paciente_id_display'] ?? $registro['estado_paciente_id']); ?>
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                        <?php if ($permisos['upd']): 
+                            $anamnesis_id = $pacientes_con_anamnesis[$registro['id']] ?? null;
+                         ?>
+                        <button type="button" class="btn btn-sm btn-outline-warning btn-editar-registro" 
+                           data-id="<?php echo htmlspecialchars($registro['id']); ?>"
+                           data-anamnesis-id="<?php echo htmlspecialchars($anamnesis_id); ?>"
+                           data-tipo_identificacion_id="<?php echo htmlspecialchars($registro['tipo_identificacion_id']); ?>"
+                           data-identificacion="<?php echo htmlspecialchars($registro['identificacion']); ?>"
+                           data-fecha_ingreso="<?php echo htmlspecialchars($registro['fecha_ingreso']); ?>"
+                           data-primer_nombre="<?php echo htmlspecialchars($registro['primer_nombre']); ?>"
+                           data-segundo_nombre="<?php echo htmlspecialchars($registro['segundo_nombre']); ?>"
+                           data-primer_apellido="<?php echo htmlspecialchars($registro['primer_apellido']); ?>"
+                           data-segundo_apellido="<?php echo htmlspecialchars($registro['segundo_apellido']); ?>"
+                           data-fecha_nacimiento="<?php echo htmlspecialchars($registro['fecha_nacimiento']); ?>"
+                           data-genero_id="<?php echo htmlspecialchars($registro['genero_id']); ?>"
+                           data-grupo_sanguineo_id="<?php echo htmlspecialchars($registro['grupo_sanguineo_id']); ?>"
+                           data-alergias="<?php echo htmlspecialchars($registro['alergias']); ?>"
+                           data-departamento="<?php echo htmlspecialchars($registro['departamento']); ?>"
+                           data-ciudad="<?php echo htmlspecialchars($registro['ciudad']); ?>"
+                           data-localidad="<?php echo htmlspecialchars($registro['localidad']); ?>"
+                           data-direccion="<?php echo htmlspecialchars($registro['direccion']); ?>"
+                           data-telefono_principal="<?php echo htmlspecialchars($registro['telefono_principal']); ?>"
+                           data-telefono_secundario="<?php echo htmlspecialchars($registro['telefono_secundario']); ?>"
+                           data-email="<?php echo htmlspecialchars($registro['email']); ?>"
+                           data-eps_id="<?php echo htmlspecialchars($registro['eps_id']); ?>"
+                           data-ocupacion_id="<?php echo htmlspecialchars($registro['ocupacion_id']); ?>"
+                           data-estado_civil_id="<?php echo htmlspecialchars($registro['estado_civil_id']); ?>"
+                           data-identificacion_acompaniante="<?php echo htmlspecialchars($registro['identificacion_acompaniante']); ?>"
+                           data-acompaniante_nombres="<?php echo htmlspecialchars($registro['acompaniante_nombres']); ?>"
+                           data-acompaniante_apellidos="<?php echo htmlspecialchars($registro['acompaniante_apellidos']); ?>"
+                           data-acompaniante_telefono="<?php echo htmlspecialchars($registro['acompaniante_telefono']); ?>"
+                           data-acompañante_email="<?php echo htmlspecialchars($registro['acompañante_email']); ?>"
+                           data-parentesco_id="<?php echo htmlspecialchars($registro['parentesco_id']); ?>"
+                           data-foto_ruta="<?php echo htmlspecialchars($registro['foto_ruta']); ?>"
+                           data-estado_paciente_id="<?php echo htmlspecialchars($registro['estado_paciente_id']); ?>"
+                           data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
+                           data-fecha_insercion="<?php echo htmlspecialchars($registro['fecha_insercion']); ?>"
+                           data-usuario_id_actualizo="<?php echo htmlspecialchars($registro['usuario_id_actualizo']); ?>"
+                           data-fecha_actualizacion="<?php echo htmlspecialchars($registro['fecha_actualizacion']); ?>"
+                        > <i class="icon-edit"></i></button>
+                        <?php endif; ?>
+
+                        <?php
+                        // Mostrar botón Anamnesis si tiene el programa crea_anamnesis
+                        if ($permisos_crea_anamnesis):
+                            // El anamnesis_id ya fue calculado arriba para el botón de edición
+                            if ($anamnesis_id):
+                                // Si ya tiene anamnesis -> Editar (si tiene permiso de actualizar o insertar)
+                                if ($permisos_crea_anamnesis['upd'] || $permisos_crea_anamnesis['ins']): ?>
+                                    <a href="vista_editar_anamnesis.php?id=<?php echo $anamnesis_id; ?>" class="btn btn-sm btn-outline-info" title="Editar Anamnesis"><i class="icon-edit"></i> Anamnesis</a>
+                                <?php endif;
+                            else:
+                                // Si no tiene anamnesis -> Crear (si tiene permiso de insertar)
+                                if ($permisos_crea_anamnesis['ins']): ?>
+                                    <a href="vista_crear_anamnesis.php?paciente_id=<?php echo $registro['id']; ?>" class="btn btn-sm btn-outline-info" title="Crear Anamnesis"><i class="icon-plus"></i> Anamnesis</a>
+                                <?php endif;
+                            endif;
+
+                            // Opción de eliminar si tiene permiso
+                            if ($anamnesis_id && $permisos_crea_anamnesis['del']): ?>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarAnamnesis('<?php echo $anamnesis_id; ?>')" title="Eliminar Anamnesis"><i class="icon-trash"></i></button>
+                            <?php endif;
+                        endif; ?>
+
+
+                        <?php if ($permisos['del']): ?>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminar('<?php echo htmlspecialchars($registro['id']); ?>')"> <i class="icon-trash-2"></i></button>
+                        <?php endif; ?>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; else: ?>
+                                <tr><td colspan="13">No hay registros disponibles.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+
+        <div class="mb-3">
+            <form method="GET" class="d-flex">
+                <label for="registrosPorPagina" class="mr-2">Registros por página:</label>
+                <select id="registrosPorPagina" name="registrosPorPagina" class="form-control mr-2" onchange="this.form.submit()">
+                    <option value="15" <?= $registrosPorPagina == 15 ? 'selected' : '' ?>>15</option>
+                    <option value="30" <?= $registrosPorPagina == 30 ? 'selected' : '' ?>>30</option>
+                    <option value="50" <?= $registrosPorPagina == 50 ? 'selected' : '' ?>>50</option>
+                    <option value="100" <?= $registrosPorPagina == 100 ? 'selected' : '' ?>>100</option>
+                </select>
+                <input type="hidden" name="pagina" value="<?= $paginaActual ?>">
+                <?php if(isset($_GET['action']) && $_GET['action'] == 'buscar'): ?>                    <input type="hidden" name="action" value="buscar">
+                    <input type="hidden" name="busqueda" value="<?= htmlspecialchars($termino) ?>">
+                    <input type="hidden" name="campo" value="<?= htmlspecialchars($campoFiltro) ?>">
+                <?php endif; ?>            </form>
+        </div>
+
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <?php
+                // Cálculo de páginas ya realizado arriba
+                $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
+                for ($i = 1; $i <= $totalPaginas; $i++):
+                ?>
+                    <li class="page-item <?= $i == $paginaActual ? 'active' : '' ?> ">
+                        <a class="page-link" href="?pagina=<?= $i ?>&registrosPorPagina=<?= $registrosPorPagina ?>&action=<?= $_GET['action'] ?? '' ?>&busqueda=<?= urlencode($termino) ?>&campo=<?= urlencode($campoFiltro) ?>"><?= $i ?></a>
+                    </li>
+                <?php endfor; ?>
+            </ul>
+        </nav>
+
+        <!-- Modal para crear -->
+        <div class="modal fade shadow" id="modalCrear" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 overflow-hidden" style="border-radius: 20px;">
+                    <div class="modal-header text-white d-flex justify-content-between align-items-center" style="background: var(--primary-gradient);">
+                        <h5 class="modal-title fw-bold"><i class="icon-plus me-2"></i>Nuevo Registro</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formCrear" method="post">
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="tipo_identificacion_id">tipo_id:</label>
+                                    <select class="form-select" id="tipo_identificacion_id" name="tipo_identificacion_id" required>
+                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="identificacion">identificacion:</label>
+                                    <input type="text" class="form-control" id="identificacion" name="identificacion" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="fecha_ingreso">fecha_ingreso:</label>
+                                    <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="primer_nombre">primer_nombre:</label>
+                                    <input type="text" class="form-control" id="primer_nombre" name="primer_nombre" required>
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="segundo_nombre">segundo_nombre:</label>
+                                    <input type="text" class="form-control" id="segundo_nombre" name="segundo_nombre">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="primer_apellido">primer_apellido:</label>
+                                    <input type="text" class="form-control" id="primer_apellido" name="primer_apellido" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="segundo_apellido">segundo_apellido:</label>
+                                    <input type="text" class="form-control" id="segundo_apellido" name="segundo_apellido">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="fecha_nacimiento">fecha_nacimiento:</label>
+                                    <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="genero_id">genero_id:</label>
+                                    <select class="form-select" id="genero_id" name="genero_id" required>
+                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="grupo_sanguineo_id">grupo_sanguineo_id:</label>
+                                    <select class="form-select" id="grupo_sanguineo_id" name="grupo_sanguineo_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="alergias">alergias:</label>
+                                    <input type="text" class="form-control" id="alergias" name="alergias">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="departamento">departamento:</label>
+                                    <input type="text" class="form-control" id="departamento" name="departamento">
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="ciudad">ciudad:</label>
+                                    <input type="text" class="form-control" id="ciudad" name="ciudad">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="localidad">localidad:</label>
+                                    <input type="text" class="form-control" id="localidad" name="localidad">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="direccion">direccion:</label>
+                                    <input type="text" class="form-control" id="direccion" name="direccion">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="telefono_principal">telefono_principal:</label>
+                                    <input type="text" class="form-control" id="telefono_principal" name="telefono_principal">
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="telefono_secundario">telefono_secundario:</label>
+                                    <input type="text" class="form-control" id="telefono_secundario" name="telefono_secundario">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="email">email:</label>
+                                    <input type="email" class="form-control" id="email" name="email">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="eps_id">eps_id:</label>
+                                    <select class="form-select" id="eps_id" name="eps_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="ocupacion_id">ocupacion_id:</label>
+                                    <select class="form-select" id="ocupacion_id" name="ocupacion_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="estado_civil_id">estado_civil_id:</label>
+                                    <select class="form-select" id="estado_civil_id" name="estado_civil_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="identificacion_acompaniante">identificacion_acompaniante:</label>
+                                    <input type="text" class="form-control" id="identificacion_acompaniante" name="identificacion_acompaniante">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="acompaniante_nombres">acompaniante_nombres:</label>
+                                    <input type="text" class="form-control" id="acompaniante_nombres" name="acompaniante_nombres">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="acompaniante_apellidos">acompaniante_apellidos:</label>
+                                    <input type="text" class="form-control" id="acompaniante_apellidos" name="acompaniante_apellidos">
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="acompaniante_telefono">acompaniante_telefono:</label>
+                                    <input type="text" class="form-control" id="acompaniante_telefono" name="acompaniante_telefono">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="acompañante_email">acompañante_email:</label>
+                                    <input type="text" class="form-control" id="acompañante_email" name="acompañante_email">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="parentesco_id">parentesco_id:</label>
+                                    <select class="form-select" id="parentesco_id" name="parentesco_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="foto_ruta">foto_ruta:</label>
+                                    <input type="text" class="form-control" id="foto_ruta" name="foto_ruta">
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
+                                    <label for="estado_paciente_id">estado_paciente_id:</label>
+                                    <select class="form-select" id="estado_paciente_id" name="estado_paciente_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                            </div>                            <div class="text-end mt-4">
+                                <button type="button" class="btn btn-light btn-premium me-2" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" id="btnSaveExit" class="btn btn-premium btn-primary px-3"><i class="icon-ok-2 me-1"></i> Guardar y salir</button>
+                                <button type="submit" id="btnSaveContinue" class="btn btn-premium btn-info text-white px-3"><i class="icon-right-open me-1"></i> Guardar & Continuar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para actualizar -->
+        <div class="modal fade shadow" id="modalActualizar" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 overflow-hidden" style="border-radius: 20px;">
+                    <div class="modal-header text-white d-flex justify-content-between align-items-center" style="background: var(--primary-gradient);">
+                        <h5 class="modal-title fw-bold"><i class="icon-edit me-2"></i>Editar Registro</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-4">
+                    <form id="formActualizar" method="post">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                     <div class="mb-3 border-bottom pb-2">
+                         <div class="row">
+                             <div class="form-group col-md-8">
+                               <h5 class="text-primary">Actualizar Paciente</h5>
+                             </div>
+                             <div class="form-group col-md-3">
+                                <div class="form-group mb-0 d-flex align-items-center">
+                                    <label class="me-2">ID:</label>
+                                    <input type="text" class="form-control form-control-sm" id="id_u" name="id" readonly style="width: 80px;">
+                                </div>
+                             </div>
+                         </div>
+                     </div>
+                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="tipo_identificacion_id">tipo_id:</label>
+                                    <select class="form-select" id="tipo_identificacion_id" name="tipo_identificacion_id" required>
+                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="identificacion">identificacion:</label>
+                                     <input type="text" class="form-control" id="identificacion_u" name="identificacion" required>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="fecha_ingreso">fecha_ingreso:</label>
+                                     <input type="date" class="form-control" id="fecha_ingreso_u" name="fecha_ingreso" required>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="primer_nombre">primer_nombre:</label>
+                                     <input type="text" class="form-control" id="primer_nombre_u" name="primer_nombre" required>
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="segundo_nombre">segundo_nombre:</label>
+                                     <input type="text" class="form-control" id="segundo_nombre_u" name="segundo_nombre">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="primer_apellido">primer_apellido:</label>
+                                     <input type="text" class="form-control" id="primer_apellido_u" name="primer_apellido" required>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="segundo_apellido">segundo_apellido:</label>
+                                     <input type="text" class="form-control" id="segundo_apellido_u" name="segundo_apellido">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="fecha_nacimiento">fecha_nacimiento:</label>
+                                     <input type="date" class="form-control" id="fecha_nacimiento_u" name="fecha_nacimiento" required>
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="genero_id">genero_id:</label>
+                                    <select class="form-select" id="genero_id_u" name="genero_id" required>
+                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="grupo_sanguineo_id">grupo_sanguineo_id:</label>
+                                    <select class="form-select" id="grupo_sanguineo_id_u" name="grupo_sanguineo_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="alergias">alergias:</label>
+                                     <input type="text" class="form-control" id="alergias_u" name="alergias">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="departamento">departamento:</label>
+                                     <input type="text" class="form-control" id="departamento_u" name="departamento">
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="ciudad">ciudad:</label>
+                                     <input type="text" class="form-control" id="ciudad_u" name="ciudad">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="localidad">localidad:</label>
+                                     <input type="text" class="form-control" id="localidad_u" name="localidad">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="direccion">direccion:</label>
+                                     <input type="text" class="form-control" id="direccion_u" name="direccion">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="telefono_principal">telefono_principal:</label>
+                                     <input type="text" class="form-control" id="telefono_principal_u" name="telefono_principal">
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="telefono_secundario">telefono_secundario:</label>
+                                     <input type="text" class="form-control" id="telefono_secundario_u" name="telefono_secundario">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="email">email:</label>
+                                    <input type="email" class="form-control" id="email_u" name="email">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="eps_id">eps_id:</label>
+                                    <select class="form-select" id="eps_id_u" name="eps_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="ocupacion_id">ocupacion_id:</label>
+                                    <select class="form-select" id="ocupacion_id_u" name="ocupacion_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="estado_civil_id">estado_civil_id:</label>
+                                    <select class="form-select" id="estado_civil_id_u" name="estado_civil_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="identificacion_acompaniante">identificacion_acompaniante:</label>
+                                     <input type="text" class="form-control" id="identificacion_acompaniante_u" name="identificacion_acompaniante">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="acompaniante_nombres">acompaniante_nombres:</label>
+                                     <input type="text" class="form-control" id="acompaniante_nombres_u" name="acompaniante_nombres">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="acompaniante_apellidos">acompaniante_apellidos:</label>
+                                     <input type="text" class="form-control" id="acompaniante_apellidos_u" name="acompaniante_apellidos">
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="acompaniante_telefono">acompaniante_telefono:</label>
+                                     <input type="text" class="form-control" id="acompaniante_telefono_u" name="acompaniante_telefono">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="acompañante_email">acompañante_email:</label>
+                                     <input type="text" class="form-control" id="acompañante_email_u" name="acompañante_email">
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="parentesco_id">parentesco_id:</label>
+                                    <select class="form-select" id="parentesco_id_u" name="parentesco_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                                 <div class="col-md-3 mb-3">
+                                     <label for="foto_ruta">foto_ruta:</label>
+                                     <input type="text" class="form-control" id="foto_ruta_u" name="foto_ruta">
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
+                                     <label for="estado_paciente_id">estado_paciente_id:</label>
+                                    <select class="form-select" id="estado_paciente_id_u" name="estado_paciente_id">
+                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
+                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>                                    </select>
+                                </div>
+                            </div>                                 <input type="hidden" id="idActualizar" name="idActualizar">
+                                 <div class="text-end mt-4">
+                                     <button type="button" class="btn btn-light btn-premium me-2" data-bs-dismiss="modal">Cancelar</button>
+                                     <span id="anamnesis_btn_container_u"></span>
+                                     <button type="submit" id="btnUpdateSave" class="btn btn-premium btn-warning text-white px-3"><i class="icon-ok-2 me-1"></i> Guardar y salir</button>
+                                 </div>
+                    </form>
+                 </div>
+             </div>
+         </div>
+     </div>
+
+    <!-- Scripts necesarios -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        const permisosAnamnesis = <?php echo json_encode($permisos_crea_anamnesis); ?>;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar modales
+            const myModalCreate = new bootstrap.Modal(document.getElementById('modalCrear'));
+            const modalElActualizar = document.getElementById('modalActualizar');
+            const myModalActualizar = new bootstrap.Modal(modalElActualizar);
+
+            let actionType = 'exit'; // 'exit' o 'continue'
+
+            document.getElementById('btnSaveExit').addEventListener('click', () => { actionType = 'exit'; });
+            document.getElementById('btnSaveContinue').addEventListener('click', () => { actionType = 'continue'; });
+
+            // Manejador del formulario crear
+            document.getElementById('formCrear').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fetch('../controladores/controlador_pacientes.php?action=crear', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Si data es un número (ID) o tiene success: true
+                    const success = (typeof data === 'number' || data > 0 || data.success === true);
+                    const newId = (typeof data === 'number') ? data : (data.id || null);
+
+                    if(success) {
+                        if (actionType === 'continue' && newId) {
+                            window.location.href = `vista_crear_anamnesis.php?paciente_id=${newId}&source=edit`;
+                        } else {
+                            myModalCreate.hide();
+                            location.reload();
+                        }
+                    } else if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('Error al crear el registro: ' + JSON.stringify(data));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud.');
+                });
+            });
+
+            // Delegación de eventos para el botón editar (más robusto)
+            document.body.addEventListener('click', function(event) {
+                var button = event.target.closest('.btn-editar-registro');
+                if (!button) return;
+
+                // Inicializar modal bajo demanda para evitar conflictos
+                var modalEl = document.getElementById('modalActualizar');
+                // Usamos la instancia ya creada arriba si es posible
+                var modalActualizar = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+
+                // Cargar el ID para actualizar
+                var idActualizar = button.getAttribute('data-id');
+                var inputIdHidden = document.getElementById('idActualizar');
+                if(inputIdHidden) inputIdHidden.value = idActualizar;
+
+                // Lógica del botón Anamnesis en el modal
+                const anamnesisId = button.getAttribute('data-anamnesis-id');
+                const btnContainer = document.getElementById('anamnesis_btn_container_u');
+                if (btnContainer && permisosAnamnesis) {
+                    let btnHtml = '';
+                    if (anamnesisId && anamnesisId !== '') {
+                        if (permisosAnamnesis.upd || permisosAnamnesis.ins) {
+                            btnHtml += `<a href="vista_editar_anamnesis.php?id=${anamnesisId}&source=edit" class="btn btn-sm btn-info text-white" title="Editar Anamnesis"><i class="icon-edit"></i> Anamnesis</a>`;
+                        }
+                        if (permisosAnamnesis.del) {
+                            btnHtml += `<button type="button" class="btn btn-sm btn-danger ms-1" onclick="eliminarAnamnesis('${anamnesisId}')" title="Eliminar Anamnesis"><i class="icon-trash"></i></button>`;
+                        }
+                    } else {
+                        if (permisosAnamnesis.ins) {
+                            btnHtml += `<a href="vista_crear_anamnesis.php?paciente_id=${idActualizar}&source=edit" class="btn btn-sm btn-info text-white" title="Crear Anamnesis"><i class="icon-plus"></i> Anamnesis</a>`;
+                        }
+                    }
+                    btnContainer.innerHTML = btnHtml;
+                }
+
+                var valorid = button.getAttribute('data-id');
+                var inputid = document.getElementById('id_u');
+                if(inputid) {
+                    if (inputid.type === 'checkbox') {
+                        inputid.checked = (valorid === 'activo');
+                    } else {
+                        inputid.value = valorid;
+                    }
+                }
+                var valortipo_identificacion_id = button.getAttribute('data-tipo_identificacion_id');
+                var inputtipo_identificacion_id = document.getElementById('tipo_identificacion_id_u');
+                if(inputtipo_identificacion_id) {
+                    if (inputtipo_identificacion_id.type === 'checkbox') {
+                        inputtipo_identificacion_id.checked = (valortipo_identificacion_id === 'activo');
+                    } else {
+                        inputtipo_identificacion_id.value = valortipo_identificacion_id;
+                    }
+                }
+                var valoridentificacion = button.getAttribute('data-identificacion');
+                var inputidentificacion = document.getElementById('identificacion_u');
+                if(inputidentificacion) {
+                    if (inputidentificacion.type === 'checkbox') {
+                        inputidentificacion.checked = (valoridentificacion === 'activo');
+                    } else {
+                        inputidentificacion.value = valoridentificacion;
+                    }
+                }
+                var valorfecha_ingreso = button.getAttribute('data-fecha_ingreso');
+                var inputfecha_ingreso = document.getElementById('fecha_ingreso_u');
+                if(inputfecha_ingreso) {
+                    if (inputfecha_ingreso.type === 'checkbox') {
+                        inputfecha_ingreso.checked = (valorfecha_ingreso === 'activo');
+                    } else {
+                        inputfecha_ingreso.value = valorfecha_ingreso;
+                    }
+                }
+                var valorprimer_nombre = button.getAttribute('data-primer_nombre');
+                var inputprimer_nombre = document.getElementById('primer_nombre_u');
+                if(inputprimer_nombre) {
+                    if (inputprimer_nombre.type === 'checkbox') {
+                        inputprimer_nombre.checked = (valorprimer_nombre === 'activo');
+                    } else {
+                        inputprimer_nombre.value = valorprimer_nombre;
+                    }
+                }
+                var valorsegundo_nombre = button.getAttribute('data-segundo_nombre');
+                var inputsegundo_nombre = document.getElementById('segundo_nombre_u');
+                if(inputsegundo_nombre) {
+                    if (inputsegundo_nombre.type === 'checkbox') {
+                        inputsegundo_nombre.checked = (valorsegundo_nombre === 'activo');
+                    } else {
+                        inputsegundo_nombre.value = valorsegundo_nombre;
+                    }
+                }
+                var valorprimer_apellido = button.getAttribute('data-primer_apellido');
+                var inputprimer_apellido = document.getElementById('primer_apellido_u');
+                if(inputprimer_apellido) {
+                    if (inputprimer_apellido.type === 'checkbox') {
+                        inputprimer_apellido.checked = (valorprimer_apellido === 'activo');
+                    } else {
+                        inputprimer_apellido.value = valorprimer_apellido;
+                    }
+                }
+                var valorsegundo_apellido = button.getAttribute('data-segundo_apellido');
+                var inputsegundo_apellido = document.getElementById('segundo_apellido_u');
+                if(inputsegundo_apellido) {
+                    if (inputsegundo_apellido.type === 'checkbox') {
+                        inputsegundo_apellido.checked = (valorsegundo_apellido === 'activo');
+                    } else {
+                        inputsegundo_apellido.value = valorsegundo_apellido;
+                    }
+                }
+                var valorfecha_nacimiento = button.getAttribute('data-fecha_nacimiento');
+                var inputfecha_nacimiento = document.getElementById('fecha_nacimiento_u');
+                if(inputfecha_nacimiento) {
+                    if (inputfecha_nacimiento.type === 'checkbox') {
+                        inputfecha_nacimiento.checked = (valorfecha_nacimiento === 'activo');
+                    } else {
+                        inputfecha_nacimiento.value = valorfecha_nacimiento;
+                    }
+                }
+                var valorgenero_id = button.getAttribute('data-genero_id');
+                var inputgenero_id = document.getElementById('genero_id_u');
+                if(inputgenero_id) {
+                    if (inputgenero_id.type === 'checkbox') {
+                        inputgenero_id.checked = (valorgenero_id === 'activo');
+                    } else {
+                        inputgenero_id.value = valorgenero_id;
+                    }
+                }
+                var valorgrupo_sanguineo_id = button.getAttribute('data-grupo_sanguineo_id');
+                var inputgrupo_sanguineo_id = document.getElementById('grupo_sanguineo_id_u');
+                if(inputgrupo_sanguineo_id) {
+                    if (inputgrupo_sanguineo_id.type === 'checkbox') {
+                        inputgrupo_sanguineo_id.checked = (valorgrupo_sanguineo_id === 'activo');
+                    } else {
+                        inputgrupo_sanguineo_id.value = valorgrupo_sanguineo_id;
+                    }
+                }
+                var valoralergias = button.getAttribute('data-alergias');
+                var inputalergias = document.getElementById('alergias_u');
+                if(inputalergias) {
+                    if (inputalergias.type === 'checkbox') {
+                        inputalergias.checked = (valoralergias === 'activo');
+                    } else {
+                        inputalergias.value = valoralergias;
+                    }
+                }
+                var valordepartamento = button.getAttribute('data-departamento');
+                var inputdepartamento = document.getElementById('departamento_u');
+                if(inputdepartamento) {
+                    if (inputdepartamento.type === 'checkbox') {
+                        inputdepartamento.checked = (valordepartamento === 'activo');
+                    } else {
+                        inputdepartamento.value = valordepartamento;
+                    }
+                }
+                var valorciudad = button.getAttribute('data-ciudad');
+                var inputciudad = document.getElementById('ciudad_u');
+                if(inputciudad) {
+                    if (inputciudad.type === 'checkbox') {
+                        inputciudad.checked = (valorciudad === 'activo');
+                    } else {
+                        inputciudad.value = valorciudad;
+                    }
+                }
+                var valorlocalidad = button.getAttribute('data-localidad');
+                var inputlocalidad = document.getElementById('localidad_u');
+                if(inputlocalidad) {
+                    if (inputlocalidad.type === 'checkbox') {
+                        inputlocalidad.checked = (valorlocalidad === 'activo');
+                    } else {
+                        inputlocalidad.value = valorlocalidad;
+                    }
+                }
+                var valordireccion = button.getAttribute('data-direccion');
+                var inputdireccion = document.getElementById('direccion_u');
+                if(inputdireccion) {
+                    if (inputdireccion.type === 'checkbox') {
+                        inputdireccion.checked = (valordireccion === 'activo');
+                    } else {
+                        inputdireccion.value = valordireccion;
+                    }
+                }
+                var valortelefono_principal = button.getAttribute('data-telefono_principal');
+                var inputtelefono_principal = document.getElementById('telefono_principal_u');
+                if(inputtelefono_principal) {
+                    if (inputtelefono_principal.type === 'checkbox') {
+                        inputtelefono_principal.checked = (valortelefono_principal === 'activo');
+                    } else {
+                        inputtelefono_principal.value = valortelefono_principal;
+                    }
+                }
+                var valortelefono_secundario = button.getAttribute('data-telefono_secundario');
+                var inputtelefono_secundario = document.getElementById('telefono_secundario_u');
+                if(inputtelefono_secundario) {
+                    if (inputtelefono_secundario.type === 'checkbox') {
+                        inputtelefono_secundario.checked = (valortelefono_secundario === 'activo');
+                    } else {
+                        inputtelefono_secundario.value = valortelefono_secundario;
+                    }
+                }
+                var valoremail = button.getAttribute('data-email');
+                var inputemail = document.getElementById('email_u');
+                if(inputemail) {
+                    if (inputemail.type === 'checkbox') {
+                        inputemail.checked = (valoremail === 'activo');
+                    } else {
+                        inputemail.value = valoremail;
+                    }
+                }
+                var valoreps_id = button.getAttribute('data-eps_id');
+                var inputeps_id = document.getElementById('eps_id_u');
+                if(inputeps_id) {
+                    if (inputeps_id.type === 'checkbox') {
+                        inputeps_id.checked = (valoreps_id === 'activo');
+                    } else {
+                        inputeps_id.value = valoreps_id;
+                    }
+                }
+                var valorocupacion_id = button.getAttribute('data-ocupacion_id');
+                var inputocupacion_id = document.getElementById('ocupacion_id_u');
+                if(inputocupacion_id) {
+                    if (inputocupacion_id.type === 'checkbox') {
+                        inputocupacion_id.checked = (valorocupacion_id === 'activo');
+                    } else {
+                        inputocupacion_id.value = valorocupacion_id;
+                    }
+                }
+                var valorestado_civil_id = button.getAttribute('data-estado_civil_id');
+                var inputestado_civil_id = document.getElementById('estado_civil_id_u');
+                if(inputestado_civil_id) {
+                    if (inputestado_civil_id.type === 'checkbox') {
+                        inputestado_civil_id.checked = (valorestado_civil_id === 'activo');
+                    } else {
+                        inputestado_civil_id.value = valorestado_civil_id;
+                    }
+                }
+                var valoridentificacion_acompaniante = button.getAttribute('data-identificacion_acompaniante');
+                var inputidentificacion_acompaniante = document.getElementById('identificacion_acompaniante_u');
+                if(inputidentificacion_acompaniante) {
+                    if (inputidentificacion_acompaniante.type === 'checkbox') {
+                        inputidentificacion_acompaniante.checked = (valoridentificacion_acompaniante === 'activo');
+                    } else {
+                        inputidentificacion_acompaniante.value = valoridentificacion_acompaniante;
+                    }
+                }
+                var valoracompaniante_nombres = button.getAttribute('data-acompaniante_nombres');
+                var inputacompaniante_nombres = document.getElementById('acompaniante_nombres_u');
+                if(inputacompaniante_nombres) {
+                    if (inputacompaniante_nombres.type === 'checkbox') {
+                        inputacompaniante_nombres.checked = (valoracompaniante_nombres === 'activo');
+                    } else {
+                        inputacompaniante_nombres.value = valoracompaniante_nombres;
+                    }
+                }
+                var valoracompaniante_apellidos = button.getAttribute('data-acompaniante_apellidos');
+                var inputacompaniante_apellidos = document.getElementById('acompaniante_apellidos_u');
+                if(inputacompaniante_apellidos) {
+                    if (inputacompaniante_apellidos.type === 'checkbox') {
+                        inputacompaniante_apellidos.checked = (valoracompaniante_apellidos === 'activo');
+                    } else {
+                        inputacompaniante_apellidos.value = valoracompaniante_apellidos;
+                    }
+                }
+                var valoracompaniante_telefono = button.getAttribute('data-acompaniante_telefono');
+                var inputacompaniante_telefono = document.getElementById('acompaniante_telefono_u');
+                if(inputacompaniante_telefono) {
+                    if (inputacompaniante_telefono.type === 'checkbox') {
+                        inputacompaniante_telefono.checked = (valoracompaniante_telefono === 'activo');
+                    } else {
+                        inputacompaniante_telefono.value = valoracompaniante_telefono;
+                    }
+                }
+                var valoracompañante_email = button.getAttribute('data-acompañante_email');
+                var inputacompañante_email = document.getElementById('acompañante_email_u');
+                if(inputacompañante_email) {
+                    if (inputacompañante_email.type === 'checkbox') {
+                        inputacompañante_email.checked = (valoracompañante_email === 'activo');
+                    } else {
+                        inputacompañante_email.value = valoracompañante_email;
+                    }
+                }
+                var valorparentesco_id = button.getAttribute('data-parentesco_id');
+                var inputparentesco_id = document.getElementById('parentesco_id_u');
+                if(inputparentesco_id) {
+                    if (inputparentesco_id.type === 'checkbox') {
+                        inputparentesco_id.checked = (valorparentesco_id === 'activo');
+                    } else {
+                        inputparentesco_id.value = valorparentesco_id;
+                    }
+                }
+                var valorfoto_ruta = button.getAttribute('data-foto_ruta');
+                var inputfoto_ruta = document.getElementById('foto_ruta_u');
+                if(inputfoto_ruta) {
+                    if (inputfoto_ruta.type === 'checkbox') {
+                        inputfoto_ruta.checked = (valorfoto_ruta === 'activo');
+                    } else {
+                        inputfoto_ruta.value = valorfoto_ruta;
+                    }
+                }
+                var valorestado_paciente_id = button.getAttribute('data-estado_paciente_id');
+                var inputestado_paciente_id = document.getElementById('estado_paciente_id_u');
+                if(inputestado_paciente_id) {
+                    if (inputestado_paciente_id.type === 'checkbox') {
+                        inputestado_paciente_id.checked = (valorestado_paciente_id === 'activo');
+                    } else {
+                        inputestado_paciente_id.value = valorestado_paciente_id;
+                    }
+                }
+                var valorusuario_id_inserto = button.getAttribute('data-usuario_id_inserto');
+                var inputusuario_id_inserto = modalEl.querySelector('#usuario_id_inserto');
+                if(inputusuario_id_inserto) {
+                    if (inputusuario_id_inserto.type === 'checkbox') {
+                        inputusuario_id_inserto.checked = (valorusuario_id_inserto === 'activo');
+                    } else {
+                        inputusuario_id_inserto.value = valorusuario_id_inserto;
+                    }
+                }
+                var valorfecha_insercion = button.getAttribute('data-fecha_insercion');
+                var inputfecha_insercion = modalEl.querySelector('#fecha_insercion');
+                if(inputfecha_insercion) {
+                    if (inputfecha_insercion.type === 'checkbox') {
+                        inputfecha_insercion.checked = (valorfecha_insercion === 'activo');
+                    } else {
+                        inputfecha_insercion.value = valorfecha_insercion;
+                    }
+                }
+                var valorusuario_id_actualizo = button.getAttribute('data-usuario_id_actualizo');
+                var inputusuario_id_actualizo = modalEl.querySelector('#usuario_id_actualizo');
+                if(inputusuario_id_actualizo) {
+                    if (inputusuario_id_actualizo.type === 'checkbox') {
+                        inputusuario_id_actualizo.checked = (valorusuario_id_actualizo === 'activo');
+                    } else {
+                        inputusuario_id_actualizo.value = valorusuario_id_actualizo;
+                    }
+                }
+                var valorfecha_actualizacion = button.getAttribute('data-fecha_actualizacion');
+                var inputfecha_actualizacion = modalEl.querySelector('#fecha_actualizacion');
+                if(inputfecha_actualizacion) {
+                    if (inputfecha_actualizacion.type === 'checkbox') {
+                        inputfecha_actualizacion.checked = (valorfecha_actualizacion === 'activo');
+                    } else {
+                        inputfecha_actualizacion.value = valorfecha_actualizacion;
+                    }
+                }
+
+                // Mostrar el modal manualmente
+                modalActualizar.show();
+            });
+
+            document.getElementById('formActualizar').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fetch('../controladores/controlador_pacientes.php?action=actualizar', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data === true || data.success === true) {
+                        // Cerrar modal y recargar
+                        var modalEl = document.getElementById('modalActualizar');
+                        var modal = bootstrap.Modal.getInstance(modalEl);
+                        if(modal) modal.hide();
+                        location.reload();
+                    } else if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('Error al actualizar el registro: ' + JSON.stringify(data));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud.');
+                });
+            });
+
+            // Lógica de auto-apertura de modal si viene el parámetro modal_edit_id
+            const urlParams = new URLSearchParams(window.location.search);
+            const modalEditId = urlParams.get('modal_edit_id');
+            if (modalEditId) {
+                // Buscamos el botón de edición para ese ID
+                const editBtn = document.querySelector(`.btn-editar-registro[data-id="${modalEditId}"]`);
+                if (editBtn) {
+                    // Esperamos un momento a que todo esté cargado y disparamos el click
+                    setTimeout(() => {
+                        editBtn.click();
+                    }, 500);
+                }
+            }
+        });
+
+        function eliminar(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
+                fetch('../controladores/controlador_pacientes.php?action=eliminar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'id=' + encodeURIComponent(id) + '&csrf_token=' + encodeURIComponent('<?php echo $csrf_token; ?>')
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar el registro.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al eliminar el registro: ' + error.message);
+                });
+            }
+        }
+
+        function eliminarAnamnesis(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este registro de anamnesis?')) {
+                fetch('../controladores/controlador_anamnesis.php?action=eliminar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'id=' + encodeURIComponent(id)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar el registro de anamnesis.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud.');
+                });
+            }
+        }
+    </script>
+
+    <style>
+        .modal-backdrop { z-index: 1040; }
+        .modal { z-index: 1050; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
+            });
+        });
+    </script>
+    </div>
+</body>
+</html>
