@@ -77,6 +77,30 @@ class ControladorCita {
 
         $datos['profesional_logueado'] = $profesional;
 
+        // --- PRE-CARGA DE PACIENTE (Desde Reporte) ---
+        if (isset($_GET['paciente_id']) && !isset($cita)) {
+            $pac_id = (int)$_GET['paciente_id'];
+            $sql_pac = "SELECT id, identificacion, CONCAT(primer_nombre, ' ', COALESCE(segundo_nombre,''), ' ', primer_apellido, ' ', COALESCE(segundo_apellido,'')) as nombre_completo, telefono_principal, f_anos(fecha_nacimiento) as edad_texto FROM pacientes WHERE id = ?";
+            $stmt_pac = $this->modelo->getConexion()->prepare($sql_pac);
+            $stmt_pac->bind_param('i', $pac_id);
+            $stmt_pac->execute();
+            $res_pac = $stmt_pac->get_result()->fetch_assoc();
+            
+            if ($res_pac) {
+                // Simular estructura de cita para que la vista lo reconozca como pre-cargado
+                $datos['paciente_precargado'] = [
+                    'id' => $res_pac['id'],
+                    'nombre' => $res_pac['nombre_completo'],
+                    'identificacion' => $res_pac['identificacion'],
+                    'telefono' => $res_pac['telefono_principal'],
+                    'edad' => $res_pac['edad_texto']
+                ];
+                
+                // Determinar tipo de consulta automáticamente
+                $datos['tipo_consulta_sugerido'] = $this->modelo->tieneCitasPrevias($pac_id) ? 2 : 1; // 2=Control, 1=Primera
+            }
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['id'])) {
             $post = $_POST;
             $post['profesional_id'] = $profesional['id'];

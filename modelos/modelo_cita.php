@@ -17,6 +17,10 @@ class ModeloCita {
         $this->conexion = $conexion;
     }
 
+    public function getConexion() {
+        return $this->conexion;
+    }
+
     // Obtener profesional asociado al usuario logueado
     public function getProfesionalByUsuario($usuario_id) {
         $sql = "SELECT ps.*, 

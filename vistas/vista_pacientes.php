@@ -114,11 +114,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         Fecha Ingreso                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`fecha_ingreso`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
-                                <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`tipos_identificacion`.`codigo`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        Tipo                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`tipos_identificacion`.`codigo`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
-                                        <?php endif; ?>                                    </a>
-                                </th>
+
                                 <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`pacientes`.`primer_nombre`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         Paciente                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`pacientes`.`primer_nombre`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
@@ -193,10 +189,10 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                 <tr>
                     <td><?php echo htmlspecialchars($registro['id']); ?></td>
                     <td><?php echo htmlspecialchars($registro['fecha_ingreso']); ?></td>
-                    <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($registro['tipo_identificacion_id_display'] ?? $registro['tipo_identificacion_id']); ?></span></td>
+
                     <td>
                         <strong><?php echo htmlspecialchars($registro['nombre_completo']); ?></strong><br>
-                        <small class="text-muted"><?php echo htmlspecialchars($registro['identificacion']); ?></small>
+                        <small class="text-muted"><?php echo htmlspecialchars(($registro['tipo_identificacion_id_display'] ?? '') . ': ' . $registro['identificacion']); ?></small>
                     </td>
                     <td><?php echo htmlspecialchars($registro['telefono_principal']); ?></td>
                     <td><?php echo htmlspecialchars($registro['email']); ?></td>
@@ -209,6 +205,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         <div class="d-flex justify-content-center gap-2">
                         <?php if ($permisos['upd']): 
                             $anamnesis_id = $pacientes_con_anamnesis[$registro['id']] ?? null;
+                            $permiso_reporte = $_SESSION['permisos']['vista_historia_clinica_reporte.php'] ?? null;
                          ?>
                         <button type="button" class="btn btn-sm btn-outline-warning btn-editar-registro" 
                            data-id="<?php echo htmlspecialchars($registro['id']); ?>"
@@ -221,9 +218,9 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-primer_apellido="<?php echo htmlspecialchars($registro['primer_apellido']); ?>"
                            data-segundo_apellido="<?php echo htmlspecialchars($registro['segundo_apellido']); ?>"
                            data-fecha_nacimiento="<?php echo htmlspecialchars($registro['fecha_nacimiento']); ?>"
+                           data-id_pais="<?php echo htmlspecialchars($registro['id_pais']); ?>"
                            data-genero_id="<?php echo htmlspecialchars($registro['genero_id']); ?>"
                            data-grupo_sanguineo_id="<?php echo htmlspecialchars($registro['grupo_sanguineo_id']); ?>"
-                           data-alergias="<?php echo htmlspecialchars($registro['alergias']); ?>"
                            data-departamento="<?php echo htmlspecialchars($registro['departamento']); ?>"
                            data-ciudad="<?php echo htmlspecialchars($registro['ciudad']); ?>"
                            data-localidad="<?php echo htmlspecialchars($registro['localidad']); ?>"
@@ -247,6 +244,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-usuario_id_actualizo="<?php echo htmlspecialchars($registro['usuario_id_actualizo']); ?>"
                            data-fecha_actualizacion="<?php echo htmlspecialchars($registro['fecha_actualizacion']); ?>"
                         > <i class="icon-edit"></i></button>
+
+                        <?php if ($permiso_reporte): ?>
+                        <a href="../controladores/controlador_reporte_historia.php?action=ver&id=<?php echo $registro['id']; ?>" 
+                           class="btn btn-sm btn-outline-info" 
+                           title="Ver Historia Clínica Histórica">
+                            <i class="icon-doc-text-inv"></i>
+                        </a>
+                        <?php endif; ?>
+
                         <?php endif; ?>
 
                         <?php
@@ -279,7 +285,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                 </tr>
                 <?php endforeach; else: ?>
-                                <tr><td colspan="13">No hay registros disponibles.</td></tr>
+                                <tr><td colspan="7">No hay registros disponibles.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -327,150 +333,201 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     <div class="modal-body p-4">
                         <form id="formCrear" method="post">
                             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="tipo_identificacion_id">tipo_id:</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="tipo_identificacion_id">Tipo ID:</label>
                                     <select class="form-select" id="tipo_identificacion_id" name="tipo_identificacion_id" required>
-                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="identificacion">identificacion:</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="identificacion">Identificación:</label>
                                     <input type="text" class="form-control" id="identificacion" name="identificacion" required>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="fecha_ingreso">fecha_ingreso:</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="fecha_ingreso">Fecha Ingreso:</label>
                                     <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso" value="<?php echo date('Y-m-d'); ?>" required>
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="primer_nombre">primer_nombre:</label>
+                                    <label for="primer_nombre">Primer Nombre:</label>
                                     <input type="text" class="form-control" id="primer_nombre" name="primer_nombre" required>
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="segundo_nombre">segundo_nombre:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="segundo_nombre">Segundo Nombre:</label>
                                     <input type="text" class="form-control" id="segundo_nombre" name="segundo_nombre">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="primer_apellido">primer_apellido:</label>
+                                    <label for="primer_apellido">Primer Apellido:</label>
                                     <input type="text" class="form-control" id="primer_apellido" name="primer_apellido" required>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="segundo_apellido">segundo_apellido:</label>
+                                    <label for="segundo_apellido">Segundo Apellido:</label>
                                     <input type="text" class="form-control" id="segundo_apellido" name="segundo_apellido">
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="fecha_nacimiento">fecha_nacimiento:</label>
+                                    <label for="fecha_nacimiento">Fecha Nacimiento:</label>
                                     <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="genero_id">genero_id:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_pais">País:</label>
+                                    <select class="form-select" id="id_pais" name="id_pais">
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_id_pais() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="genero_id">Género:</label>
                                     <select class="form-select" id="genero_id" name="genero_id" required>
-                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="grupo_sanguineo_id">grupo_sanguineo_id:</label>
+                                    <label for="grupo_sanguineo_id">Grupo Sanguíneo:</label>
                                     <select class="form-select" id="grupo_sanguineo_id" name="grupo_sanguineo_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="alergias">alergias:</label>
-                                    <input type="text" class="form-control" id="alergias" name="alergias">
+                            </div>
+
+                            <!-- Sección 2: Ubicación y Localización -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h5 class="border-bottom pb-2 text-primary">Ubicación y Localización</h5>
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="departamento">departamento:</label>
+                                    <label for="departamento">Departamento:</label>
                                     <input type="text" class="form-control" id="departamento" name="departamento">
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="ciudad">ciudad:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="ciudad">Ciudad:</label>
                                     <input type="text" class="form-control" id="ciudad" name="ciudad">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="localidad">localidad:</label>
+                                    <label for="localidad">Localidad:</label>
                                     <input type="text" class="form-control" id="localidad" name="localidad">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="direccion">direccion:</label>
+                                    <label for="direccion">Dirección:</label>
                                     <input type="text" class="form-control" id="direccion" name="direccion">
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="telefono_principal">telefono_principal:</label>
+                                    <label for="telefono_principal">Teléfono Principal:</label>
                                     <input type="text" class="form-control" id="telefono_principal" name="telefono_principal">
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="telefono_secundario">telefono_secundario:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="telefono_secundario">Teléfono Secundario:</label>
                                     <input type="text" class="form-control" id="telefono_secundario" name="telefono_secundario">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="email">email:</label>
+                                    <label for="email">Email:</label>
                                     <input type="email" class="form-control" id="email" name="email">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="eps_id">eps_id:</label>
+                                    <label for="eps_id">EPS:</label>
                                     <select class="form-select" id="eps_id" name="eps_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="ocupacion_id">ocupacion_id:</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="ocupacion_id">Ocupación:</label>
                                     <select class="form-select" id="ocupacion_id" name="ocupacion_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="estado_civil_id">estado_civil_id:</label>
+                                <div class="col-md-6 mb-3">
+                                    <label for="estado_civil_id">Estado Civil:</label>
                                     <select class="form-select" id="estado_civil_id" name="estado_civil_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
+                            </div>
+
+                            <!-- Sección 3: Acompañante/Responsable -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h5 class="border-bottom pb-2 text-primary">Datos de acompañante/Responsable</h5>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="identificacion_acompaniante">identificacion_acompaniante:</label>
+                                    <label for="identificacion_acompaniante">ID_acompañante:</label>
                                     <input type="text" class="form-control" id="identificacion_acompaniante" name="identificacion_acompaniante">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="acompaniante_nombres">acompaniante_nombres:</label>
+                                    <label for="acompaniante_nombres">Nombres:</label>
                                     <input type="text" class="form-control" id="acompaniante_nombres" name="acompaniante_nombres">
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="acompaniante_apellidos">acompaniante_apellidos:</label>
+                                    <label for="acompaniante_apellidos">Apellidos:</label>
                                     <input type="text" class="form-control" id="acompaniante_apellidos" name="acompaniante_apellidos">
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="acompaniante_telefono">acompaniante_telefono:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="parentesco_id">Parentesco:</label>
+                                    <select class="form-select" id="parentesco_id" name="parentesco_id">
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="acompaniante_telefono">Teléfono:</label>
                                     <input type="text" class="form-control" id="acompaniante_telefono" name="acompaniante_telefono">
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="acompañante_email">acompañante_email:</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="acompañante_email">Email:</label>
                                     <input type="text" class="form-control" id="acompañante_email" name="acompañante_email">
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="parentesco_id">parentesco_id:</label>
-                                    <select class="form-select" id="parentesco_id" name="parentesco_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label for="foto_ruta">foto_ruta:</label>
-                                    <input type="text" class="form-control" id="foto_ruta" name="foto_ruta">
-                                </div>
-                            </div>                            <div class="row">                                <div class="col-md-3 mb-3">
-                                    <label for="estado_paciente_id">estado_paciente_id:</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="estado_paciente_id">Estado del Paciente:</label>
                                     <select class="form-select" id="estado_paciente_id" name="estado_paciente_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>" <?= ($opcion['texto'] == 'ACTIVO') ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($opcion['texto']) ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                            </div>                            <div class="text-end mt-4">
+                                <input type="hidden" id="foto_ruta" name="foto_ruta">
+                            </div>
+                            <div class="text-end mt-4">
                                 <button type="button" class="btn btn-light btn-premium me-2" data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" id="btnSaveExit" class="btn btn-premium btn-primary px-3"><i class="icon-ok-2 me-1"></i> Guardar y salir</button>
+                                <?php if ($permisos_crea_anamnesis && $permisos_crea_anamnesis['ins']): ?>
                                 <button type="submit" id="btnSaveContinue" class="btn btn-premium btn-info text-white px-3"><i class="icon-right-open me-1"></i> Guardar & Continuar</button>
+                                <?php endif; ?>
                             </div>
                         </form>
                     </div>
@@ -504,147 +561,196 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                              </div>
                          </div>
                      </div>
-                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="tipo_identificacion_id">tipo_id:</label>
-                                    <select class="form-select" id="tipo_identificacion_id" name="tipo_identificacion_id" required>
-                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="tipo_identificacion_id_u">Tipo ID:</label>
+                                    <select class="form-select" id="tipo_identificacion_id_u" name="tipo_identificacion_id" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_tipo_identificacion_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="identificacion">identificacion:</label>
-                                     <input type="text" class="form-control" id="identificacion_u" name="identificacion" required>
+                                <div class="col-md-4 mb-3">
+                                    <label for="identificacion_u">Identificación:</label>
+                                    <input type="text" class="form-control" id="identificacion_u" name="identificacion" required>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="fecha_ingreso">fecha_ingreso:</label>
-                                     <input type="date" class="form-control" id="fecha_ingreso_u" name="fecha_ingreso" required>
+                                <div class="col-md-4 mb-3">
+                                    <label for="fecha_ingreso_u">Fecha Ingreso:</label>
+                                    <input type="date" class="form-control" id="fecha_ingreso_u" name="fecha_ingreso" required>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="primer_nombre">primer_nombre:</label>
-                                     <input type="text" class="form-control" id="primer_nombre_u" name="primer_nombre" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="primer_nombre_u">Primer Nombre:</label>
+                                    <input type="text" class="form-control" id="primer_nombre_u" name="primer_nombre" required>
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="segundo_nombre">segundo_nombre:</label>
-                                     <input type="text" class="form-control" id="segundo_nombre_u" name="segundo_nombre">
+                                <div class="col-md-3 mb-3">
+                                    <label for="segundo_nombre_u">Segundo Nombre:</label>
+                                    <input type="text" class="form-control" id="segundo_nombre_u" name="segundo_nombre">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="primer_apellido">primer_apellido:</label>
-                                     <input type="text" class="form-control" id="primer_apellido_u" name="primer_apellido" required>
+                                <div class="col-md-3 mb-3">
+                                    <label for="primer_apellido_u">Primer Apellido:</label>
+                                    <input type="text" class="form-control" id="primer_apellido_u" name="primer_apellido" required>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="segundo_apellido">segundo_apellido:</label>
-                                     <input type="text" class="form-control" id="segundo_apellido_u" name="segundo_apellido">
+                                <div class="col-md-3 mb-3">
+                                    <label for="segundo_apellido_u">Segundo Apellido:</label>
+                                    <input type="text" class="form-control" id="segundo_apellido_u" name="segundo_apellido">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="fecha_nacimiento">fecha_nacimiento:</label>
-                                     <input type="date" class="form-control" id="fecha_nacimiento_u" name="fecha_nacimiento" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="fecha_nacimiento_u">Fecha Nacimiento:</label>
+                                    <input type="date" class="form-control" id="fecha_nacimiento_u" name="fecha_nacimiento" required>
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="genero_id">genero_id:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_pais_u">País:</label>
+                                    <select class="form-select" id="id_pais_u" name="id_pais">
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_id_pais() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="genero_id_u">Género:</label>
                                     <select class="form-select" id="genero_id_u" name="genero_id" required>
-                                        <?php if('NO' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_genero_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="grupo_sanguineo_id">grupo_sanguineo_id:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="grupo_sanguineo_id_u">Grupo Sanguíneo:</label>
                                     <select class="form-select" id="grupo_sanguineo_id_u" name="grupo_sanguineo_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_grupo_sanguineo_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="alergias">alergias:</label>
-                                     <input type="text" class="form-control" id="alergias_u" name="alergias">
+                            </div>
+
+                            <!-- Sección 2: Ubicación y Localización -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h5 class="border-bottom pb-2 text-primary">Ubicación y Localización</h5>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="departamento">departamento:</label>
-                                     <input type="text" class="form-control" id="departamento_u" name="departamento">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="departamento_u">Departamento:</label>
+                                    <input type="text" class="form-control" id="departamento_u" name="departamento">
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="ciudad">ciudad:</label>
-                                     <input type="text" class="form-control" id="ciudad_u" name="ciudad">
+                                <div class="col-md-3 mb-3">
+                                    <label for="ciudad_u">Ciudad:</label>
+                                    <input type="text" class="form-control" id="ciudad_u" name="ciudad">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="localidad">localidad:</label>
-                                     <input type="text" class="form-control" id="localidad_u" name="localidad">
+                                <div class="col-md-3 mb-3">
+                                    <label for="localidad_u">Localidad:</label>
+                                    <input type="text" class="form-control" id="localidad_u" name="localidad">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="direccion">direccion:</label>
-                                     <input type="text" class="form-control" id="direccion_u" name="direccion">
+                                <div class="col-md-3 mb-3">
+                                    <label for="direccion_u">Dirección:</label>
+                                    <input type="text" class="form-control" id="direccion_u" name="direccion">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="telefono_principal">telefono_principal:</label>
-                                     <input type="text" class="form-control" id="telefono_principal_u" name="telefono_principal">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="telefono_principal_u">Teléfono Principal:</label>
+                                    <input type="text" class="form-control" id="telefono_principal_u" name="telefono_principal">
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="telefono_secundario">telefono_secundario:</label>
-                                     <input type="text" class="form-control" id="telefono_secundario_u" name="telefono_secundario">
+                                <div class="col-md-3 mb-3">
+                                    <label for="telefono_secundario_u">Teléfono Secundario:</label>
+                                    <input type="text" class="form-control" id="telefono_secundario_u" name="telefono_secundario">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="email">email:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="email_u">Email:</label>
                                     <input type="email" class="form-control" id="email_u" name="email">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="eps_id">eps_id:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="eps_id_u">EPS:</label>
                                     <select class="form-select" id="eps_id_u" name="eps_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="ocupacion_id">ocupacion_id:</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="ocupacion_id_u">Ocupación:</label>
                                     <select class="form-select" id="ocupacion_id_u" name="ocupacion_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_ocupacion_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="estado_civil_id">estado_civil_id:</label>
+                                <div class="col-md-6 mb-3">
+                                    <label for="estado_civil_id_u">Estado Civil:</label>
                                     <select class="form-select" id="estado_civil_id_u" name="estado_civil_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_estado_civil_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="identificacion_acompaniante">identificacion_acompaniante:</label>
-                                     <input type="text" class="form-control" id="identificacion_acompaniante_u" name="identificacion_acompaniante">
+                            </div>
+
+                            <!-- Sección 3: Acompañante/Responsable -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h5 class="border-bottom pb-2 text-primary">Datos de acompañante/Responsable</h5>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="acompaniante_nombres">acompaniante_nombres:</label>
-                                     <input type="text" class="form-control" id="acompaniante_nombres_u" name="acompaniante_nombres">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="identificacion_acompaniante_u">ID_acompañante:</label>
+                                    <input type="text" class="form-control" id="identificacion_acompaniante_u" name="identificacion_acompaniante">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="acompaniante_apellidos">acompaniante_apellidos:</label>
-                                     <input type="text" class="form-control" id="acompaniante_apellidos_u" name="acompaniante_apellidos">
+                                <div class="col-md-3 mb-3">
+                                    <label for="acompaniante_nombres_u">Nombres:</label>
+                                    <input type="text" class="form-control" id="acompaniante_nombres_u" name="acompaniante_nombres">
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="acompaniante_telefono">acompaniante_telefono:</label>
-                                     <input type="text" class="form-control" id="acompaniante_telefono_u" name="acompaniante_telefono">
+                                <div class="col-md-3 mb-3">
+                                    <label for="acompaniante_apellidos_u">Apellidos:</label>
+                                    <input type="text" class="form-control" id="acompaniante_apellidos_u" name="acompaniante_apellidos">
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="acompañante_email">acompañante_email:</label>
-                                     <input type="text" class="form-control" id="acompañante_email_u" name="acompañante_email">
-                                </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="parentesco_id">parentesco_id:</label>
+                                <div class="col-md-3 mb-3">
+                                    <label for="parentesco_id_u">Parentesco:</label>
                                     <select class="form-select" id="parentesco_id_u" name="parentesco_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_parentesco_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                 <div class="col-md-3 mb-3">
-                                     <label for="foto_ruta">foto_ruta:</label>
-                                     <input type="text" class="form-control" id="foto_ruta_u" name="foto_ruta">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="acompaniante_telefono_u">Teléfono:</label>
+                                    <input type="text" class="form-control" id="acompaniante_telefono_u" name="acompaniante_telefono">
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-3 mb-3">
-                                     <label for="estado_paciente_id">estado_paciente_id:</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="acompañante_email_u">Email:</label>
+                                    <input type="text" class="form-control" id="acompañante_email_u" name="acompañante_email">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="estado_paciente_id_u">Estado del Paciente:</label>
                                     <select class="form-select" id="estado_paciente_id_u" name="estado_paciente_id">
-                                        <?php if('YES' == 'YES'): ?>                                        <option value="">-- Seleccionar --</option>
-                                        <?php endif; ?>                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
-                                        <?php endforeach; ?>                                    </select>
+                                        <?php foreach ($modelo->obtenerRelacionado_estado_paciente_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>">
+                                            <?= htmlspecialchars($opcion['texto']) ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                            </div>                                 <input type="hidden" id="idActualizar" name="idActualizar">
+                                <input type="hidden" id="foto_ruta_u" name="foto_ruta">
+                            </div>
+                                 <input type="hidden" id="idActualizar" name="idActualizar">
                                  <div class="text-end mt-4">
                                      <button type="button" class="btn btn-light btn-premium me-2" data-bs-dismiss="modal">Cancelar</button>
                                      <span id="anamnesis_btn_container_u"></span>
@@ -672,8 +778,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 
             let actionType = 'exit'; // 'exit' o 'continue'
 
-            document.getElementById('btnSaveExit').addEventListener('click', () => { actionType = 'exit'; });
-            document.getElementById('btnSaveContinue').addEventListener('click', () => { actionType = 'continue'; });
+            const btnSaveExit = document.getElementById('btnSaveExit');
+            if (btnSaveExit) {
+                btnSaveExit.addEventListener('click', () => { actionType = 'exit'; });
+            }
+            
+            const btnSaveContinue = document.getElementById('btnSaveContinue');
+            if (btnSaveContinue) {
+                btnSaveContinue.addEventListener('click', () => { actionType = 'continue'; });
+            }
 
             // Manejador del formulario crear
             document.getElementById('formCrear').addEventListener('submit', function(e) {
@@ -824,6 +937,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputfecha_nacimiento.value = valorfecha_nacimiento;
                     }
                 }
+                var valorid_pais = button.getAttribute('data-id_pais');
+                var inputid_pais = document.getElementById('id_pais_u');
+                if(inputid_pais) {
+                    if (inputid_pais.type === 'checkbox') {
+                        inputid_pais.checked = (valorid_pais === 'activo');
+                    } else {
+                        inputid_pais.value = valorid_pais;
+                    }
+                }
                 var valorgenero_id = button.getAttribute('data-genero_id');
                 var inputgenero_id = document.getElementById('genero_id_u');
                 if(inputgenero_id) {
@@ -840,15 +962,6 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputgrupo_sanguineo_id.checked = (valorgrupo_sanguineo_id === 'activo');
                     } else {
                         inputgrupo_sanguineo_id.value = valorgrupo_sanguineo_id;
-                    }
-                }
-                var valoralergias = button.getAttribute('data-alergias');
-                var inputalergias = document.getElementById('alergias_u');
-                if(inputalergias) {
-                    if (inputalergias.type === 'checkbox') {
-                        inputalergias.checked = (valoralergias === 'activo');
-                    } else {
-                        inputalergias.value = valoralergias;
                     }
                 }
                 var valordepartamento = button.getAttribute('data-departamento');

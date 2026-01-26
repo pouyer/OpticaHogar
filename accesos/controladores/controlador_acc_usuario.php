@@ -237,21 +237,6 @@ switch ($accion) {
         }
         break;
     
-    case 'agregarRol':
-        if (isset($_POST['id_rol']) && isset($_POST['id_usuario_rol'])) {
-            $id_usuario = $_POST['id_usuario_rol'];
-            $id_rol = $_POST['id_rol'];
-    
-            if (empty($id_usuario) || empty($id_rol)) {
-                echo json_encode(['error' => 'ID de usuario o rol no pueden estar vacíos.']);
-                exit;
-            }
-    
-            $resultado = $controlador->agregarRol($id_usuario, $id_rol);
-            echo json_encode($resultado);
-        } else {
-            echo json_encode(['error' => 'Datos no recibidos.']);
-        }
         break;    
 
     default:

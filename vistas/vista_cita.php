@@ -56,19 +56,26 @@ endif;
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Buscar Paciente <span class="text-danger">*</span></label>
-                                <input type="text" id="buscar_paciente" class="form-control" placeholder="ID, documento o nombre..." autocomplete="off" <?= isset($cita) ? 'readonly' : 'required' ?> value="<?= isset($cita) ? htmlspecialchars($cita['paciente_identificacion'] . ' - ' . $cita['paciente_nombre']) : '' ?>">
+                                <input type="text" id="buscar_paciente" class="form-control" placeholder="ID, documento o nombre..." autocomplete="off" 
+                                    <?= (isset($cita) || isset($paciente_precargado)) ? 'readonly' : 'required' ?> 
+                                    value="<?= isset($cita) ? htmlspecialchars($cita['paciente_identificacion'] . ' - ' . $cita['paciente_nombre']) : (isset($paciente_precargado) ? htmlspecialchars($paciente_precargado['identificacion'] . ' - ' . $paciente_precargado['nombre']) : '') ?>">
                                 <div id="sugerencias" class="list-group position-absolute w-100 mt-1" style="z-index:1000; max-height:300px; overflow-y:auto; display:none;"></div>
                             </div>
                             <div class="col-md-6">
-                                <div id="info_paciente" class="mt-4" style="<?= isset($cita) ? 'display:block;' : 'display:none;' ?>">
-                                    <input type="hidden" name="paciente_id" id="paciente_id" required value="<?= isset($cita) ? $cita['paciente_id'] : '' ?>">
-                                    <?php if (isset($cita)): ?>
+                                <div id="info_paciente" class="mt-4" style="<?= (isset($cita) || isset($paciente_precargado)) ? 'display:block;' : 'display:none;' ?>">
+                                    <input type="hidden" name="paciente_id" id="paciente_id" required value="<?= isset($cita) ? $cita['paciente_id'] : (isset($paciente_precargado) ? $paciente_precargado['id'] : '') ?>">
+                                    <?php if (isset($cita) || isset($paciente_precargado)): 
+                                        $p_nombre = $cita['paciente_nombre'] ?? $paciente_precargado['nombre'];
+                                        $p_doc    = $cita['paciente_identificacion'] ?? $paciente_precargado['identificacion'];
+                                        $p_tel    = $cita['paciente_telefono'] ?? $paciente_precargado['telefono'];
+                                        $p_edad   = $cita['paciente_edad'] ?? $paciente_precargado['edad'];
+                                    ?>
                                         <script>
                                             document.addEventListener('DOMContentLoaded', function() {
-                                                document.getElementById('nombre_paciente').textContent = '<?= htmlspecialchars($cita['paciente_nombre'] ?? '') ?>';
-                                                document.getElementById('doc_paciente').textContent = '<?= htmlspecialchars($cita['paciente_identificacion'] ?? '') ?>';
-                                                document.getElementById('tel_paciente').textContent = '<?= htmlspecialchars($cita['paciente_telefono'] ?? 'No registrado') ?>';
-                                                document.getElementById('edad_paciente').textContent = '<?= htmlspecialchars($cita['paciente_edad'] ?? 'No registrada') ?>';
+                                                document.getElementById('nombre_paciente').textContent = '<?= htmlspecialchars($p_nombre) ?>';
+                                                document.getElementById('doc_paciente').textContent = '<?= htmlspecialchars($p_doc) ?>';
+                                                document.getElementById('tel_paciente').textContent = '<?= htmlspecialchars($p_tel ?? 'No registrado') ?>';
+                                                document.getElementById('edad_paciente').textContent = '<?= htmlspecialchars($p_edad ?? 'No registrada') ?>';
                                             });
                                         </script>
                                     <?php endif; ?>
@@ -90,8 +97,12 @@ endif;
                                 <select name="tipo_consulta_id" class="form-select" required>
                                     <option value="">Seleccione...</option>
                                     <?php if (isset($tiposConsulta) && is_array($tiposConsulta)): ?>
-                                        <?php foreach ($tiposConsulta as $tc): ?>
-                                            <option value="<?= $tc['id'] ?>" <?= (isset($cita) && isset($cita['tipo_consulta_id']) && $cita['tipo_consulta_id'] == $tc['id']) ? 'selected' : '' ?>><?= htmlspecialchars($tc['nombre']) ?></option>
+                                        <?php foreach ($tiposConsulta as $tc): 
+                                            $selected = '';
+                                            if (isset($cita) && $cita['tipo_consulta_id'] == $tc['id']) $selected = 'selected';
+                                            else if (isset($tipo_consulta_sugerido) && $tipo_consulta_sugerido == $tc['id']) $selected = 'selected';
+                                        ?>
+                                            <option value="<?= $tc['id'] ?>" <?= $selected ?>><?= htmlspecialchars($tc['nombre']) ?></option>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </select>

@@ -337,6 +337,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
         $(document).ready(function() {
             $('#modalActualizar').on('show.bs.modal', function(event) {
                 const btn = $(event.relatedTarget);
+                $('#upd_id_usuario').val(btn.data('id-usuario'));
                 $('#upd_username').val(btn.data('username'));
                 $('#upd_fullname').val(btn.data('fullname'));
                 $('#upd_correo').val(btn.data('correo'));
