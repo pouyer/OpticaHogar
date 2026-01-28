@@ -243,97 +243,84 @@
             display: none;
         }
 
-        .btn-print {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 15px 25px;
-            background: #8d1111;
-            color: #fff;
-            border: none;
+        /* Botones Base */
+        .btn-action {
+            padding: 12px 20px;
             border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-weight: bold;
-            z-index: 1000;
-        }
-        .btn-email {
-            position: fixed;
-            bottom: 30px;
-            right: 210px;
-            padding: 15px 25px;
-            background: #198754;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-weight: bold;
-            z-index: 1000;
             text-decoration: none;
-        }
-        .btn-new-cita {
-            position: fixed;
-            bottom: 30px;
-            right: 420px;
-            padding: 15px 25px;
-            background: #ffc107;
-            color: #000;
-            border: none;
-            border-radius: 50px;
+            font-weight: bold;
             cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-weight: bold;
-            z-index: 1000;
-            text-decoration: none;
+            border: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .btn-print:hover, .btn-email:hover, .btn-new-cita:hover {
+        .btn-action:hover {
+            transform: translateY(-2px);
             opacity: 0.9;
-            transform: translateY(-2px);
         }
-        .btn-new-cita:hover {
-            color: #000;
-        }
-        .btn-back {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            padding: 15px 25px;
-            background: #6c757d;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-weight: bold;
-            z-index: 1000;
-            text-decoration: none;
-        }
-        .btn-back:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-            color: #fff;
+
+        /* Estilos Responsivos para Móvil */
+        @media (max-width: 768px) {
+            .report-container {
+                width: 100%;
+                padding: 15px;
+                margin: 0;
+                border-radius: 0;
+            }
+            .data-grid, .data-grid-4 {
+                grid-template-columns: 1fr 1fr;
+            }
+            .consultation-box {
+                grid-template-columns: 1fr;
+            }
+            .btn-action {
+                display: flex;
+                width: 100%;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                position: static !important;
+            }
+            .no-print-mobile {
+                display: none !important;
+            }
+            .logo-area img {
+                max-height: 50px;
+            }
+            .company-info h2 {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
 
     <?php if (!isset($esEmail) || !$esEmail): ?>
-    <a href="../vistas/vista_pacientes.php" class="btn-back no-print">
-        <i class="icon-left-open"></i> Volver al Listado
-    </a>
+    <div class="no-print" style="position: fixed; bottom: 20px; width: 100%; z-index: 1000; padding: 0 20px; pointer-events: none;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; max-width: 1000px; margin: 0 auto;">
+            <a href="../vistas/vista_pacientes.php" class="btn-action pointer-events-auto" style="background: #6c757d; color: #fff;">
+                <i class="icon-left-open"></i> <span class="no-print-mobile">Volver</span>
+            </a>
+            
+            <div style="display: flex; gap: 10px;" class="pointer-events-auto">
+                <a href="../controladores/controlador_cita.php?action=crear&paciente_id=<?php echo $paciente['id']; ?>" class="btn-action btn-new-cita no-print-mobile" style="background: #ffc107; color: #000;">
+                    <i class="icon-plus"></i> Nueva Consulta
+                </a>
 
-    <a href="../controladores/controlador_cita.php?action=crear&paciente_id=<?php echo $paciente['id']; ?>" class="btn-new-cita no-print">
-        <i class="icon-plus"></i> Nueva Consulta
-    </a>
+                <button class="btn-action btn-email" data-bs-toggle="modal" data-bs-target="#modalEmail" style="background: #198754; color: #fff;">
+                    <i class="icon-mail"></i> <span class="no-print-mobile">Enviar por Correo</span>
+                </button>
 
-    <button class="btn-email no-print" data-bs-toggle="modal" data-bs-target="#modalEmail">
-        <i class="icon-mail"></i> Enviar por Correo
-    </button>
-
-    <button class="btn-print no-print" onclick="prepararImpresion();">
-        <i class="icon-print"></i> Imprimir / PDF
-    </button>
+                <button class="btn-action btn-print no-print-mobile" onclick="prepararImpresion();" style="background: #8d1111; color: #fff;">
+                    <i class="icon-print"></i> <span class="no-print-mobile">Imprimir / PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>.pointer-events-auto { pointer-events: auto; }</style>
     <?php endif; ?>
 
     <div class="report-container">
@@ -534,18 +521,31 @@
                                         <table class="data-table-mini">
                                             <tr>
                                                 <th>Vía</th>
+                                                <th>Tipo</th>
                                                 <th>OD</th>
                                                 <th>OI</th>
                                             </tr>
                                             <tr>
-                                                <td>Sin Corr.</td>
+                                                <td rowspan="2" style="vertical-align: middle;">Sin Corr.</td>
+                                                <td>Lejos</td>
                                                 <td><?php echo $cita['av_sc_lejos_od'] ?: '-'; ?></td>
                                                 <td><?php echo $cita['av_sc_lejos_oi'] ?: '-'; ?></td>
                                             </tr>
                                             <tr>
-                                                <td>Con Corr.</td>
+                                                <td>Cerca</td>
+                                                <td><?php echo $cita['av_sc_cerca_od'] ?: '-'; ?></td>
+                                                <td><?php echo $cita['av_sc_cerca_oi'] ?: '-'; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td rowspan="2" style="vertical-align: middle;">Con Corr.</td>
+                                                <td>Lejos</td>
                                                 <td><?php echo $cita['av_cc_lejos_od'] ?: '-'; ?></td>
                                                 <td><?php echo $cita['av_cc_lejos_oi'] ?: '-'; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Cerca</td>
+                                                <td><?php echo $cita['av_cc_cerca_od'] ?: '-'; ?></td>
+                                                <td><?php echo $cita['av_cc_cerca_oi'] ?: '-'; ?></td>
                                             </tr>
                                         </table>
                                     </div>
@@ -597,6 +597,12 @@
                                         <td><?php echo $cita['resultado_final_oi'] ?: '-'; ?></td>
                                     </tr>
                                 </table>
+                                
+                                <div style="margin-top: 5px; font-size: 0.85em; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                    <div><strong>Lente:</strong> <?php echo htmlspecialchars(($cita['lentes_tipo_nombre'] ?? '-') . ' / ' . ($cita['lentes_material_nombre'] ?? '-')); ?></div>
+                                    <div><strong>Uso:</strong> <?php echo htmlspecialchars($cita['uso_lentes_nombre'] ?? '-'); ?></div>
+                                    <div style="grid-column: span 2;"><strong>Tratamientos / Otros:</strong> <?php echo htmlspecialchars(($cita['lentes_tratamientos'] ?: 'Ninguno') . ($cita['filtro_color'] ? ' | ' . $cita['filtro_color'] : '')); ?></div>
+                                </div>
 
                                 <div class="consultation-box">
                                     <div>
@@ -608,10 +614,18 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <span class="findings-label">Diagnóstico (CIE-10):</span>
+                                        <span class="findings-label">Diagnóstico (CIE-10 / Principal):</span>
                                         <div class="findings-value">
-                                            <strong><?php echo htmlspecialchars($cita['cie10_codigo'] ?? ''); ?></strong> 
-                                            <small><?php echo htmlspecialchars($cita['cie10_descripcion'] ?? ($cita['diagnostico_principal'] ?: 'Sin diagnóstico')); ?></small>
+                                            <?php if($cita['cie10_codigo']): ?>
+                                                <strong><?php echo htmlspecialchars($cita['cie10_codigo']); ?></strong> 
+                                                <small><?php echo htmlspecialchars($cita['cie10_descripcion']); ?></small>
+                                                <?php if($cita['diagnostico_principal']): ?>
+                                                    <br><small><strong>Princ:</strong> <?php echo htmlspecialchars($cita['diagnostico_principal']); ?></small>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <strong><?php echo htmlspecialchars($cita['diagnostico_principal'] ?: 'Sin diagnóstico'); ?></strong>
+                                            <?php endif; ?>
+                                            
                                             <?php if($cita['diagnostico_secundario']): ?>
                                                 <br><small><strong>Sec:</strong> <?php echo htmlspecialchars($cita['diagnostico_secundario']); ?></small>
                                             <?php endif; ?>
@@ -742,12 +756,14 @@
                 // Cambiamos el título del padre al título del reporte
                 window.top.document.title = tituloReporte;
                 
-                window.print();
-                
-                // Restauramos el título original después de un pequeño retraso
+                // Chrome necesita un pequeño retraso para capturar el cambio de título del padre
                 setTimeout(function() {
-                    window.top.document.title = tituloOriginalPadre;
-                }, 2000);
+                    window.print();
+                    // Restauramos el título original después de un tiempo prudente
+                    setTimeout(function() {
+                        window.top.document.title = tituloOriginalPadre;
+                    }, 5000); // 5 segundos para que el usuario interactúe con el diálogo
+                }, 250);
             } catch (e) {
                 // Si hay error de seguridad (CORS), usamos el print normal
                 window.print();

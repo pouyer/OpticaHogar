@@ -22,8 +22,8 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
     <link rel="stylesheet" href="../css/estilos.css">
     <style>
         :root {
-            --primary-color: #32c8c8;
-            --primary-gradient: linear-gradient(135deg, #32c8c8 0%, #2a5298 100%);
+            --primary-color: #4664d2;
+            --primary-gradient: linear-gradient(135deg, #4664d2 0%, #2a5298 100%);
             --accent-color: #ff9800;
         }
         body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
@@ -117,6 +117,16 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_cita`.`restringe_nueva_cita`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        restringe_nueva_cita                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_cita`.`restringe_nueva_cita`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_cita`.`mostrar_en_hc`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        mostrar_en_hc                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_cita`.`mostrar_en_hc`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_cita`.`orden`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         orden                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_cita`.`orden`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
@@ -168,7 +178,14 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     <td><?php echo htmlspecialchars($registro['codigo']); ?></td>
                     <td><?php echo htmlspecialchars($registro['nombre']); ?></td>
                     <td><?php echo htmlspecialchars($registro['descripcion']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['color']); ?></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div style="width: 20px; height: 20px; border-radius: 50%; background-color: <?php echo htmlspecialchars($registro['color']); ?>; border: 1px solid #dee2e6; margin-right: 10px;"></div>
+                            <?php echo htmlspecialchars($registro['color']); ?>
+                        </div>
+                    </td>
+                    <td><?php $isChecked = ($registro['restringe_nueva_cita'] == 1 || $registro['restringe_nueva_cita'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
+                    <td><?php $isChecked = ($registro['mostrar_en_hc'] == 1 || $registro['mostrar_en_hc'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td><?php echo htmlspecialchars($registro['orden']); ?></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
@@ -180,6 +197,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-nombre="<?php echo htmlspecialchars($registro['nombre']); ?>"
                            data-descripcion="<?php echo htmlspecialchars($registro['descripcion']); ?>"
                            data-color="<?php echo htmlspecialchars($registro['color']); ?>"
+                           data-restringe_nueva_cita="<?php echo htmlspecialchars($registro['restringe_nueva_cita']); ?>"
+                           data-mostrar_en_hc="<?php echo htmlspecialchars($registro['mostrar_en_hc']); ?>"
                            data-orden="<?php echo htmlspecialchars($registro['orden']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
@@ -196,7 +215,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                 </tr>
                 <?php endforeach; else: ?>
-                                <tr><td colspan="7">No hay registros disponibles.</td></tr>
+                                <tr><td colspan="9">No hay registros disponibles.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -255,7 +274,26 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="color">color:</label>
-                                    <input type="text" class="form-control" id="color" name="color">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="color" name="color">
+                                        <input type="color" class="form-control form-control-color" id="color_picker" value="#000000" title="Seleccione un color" style="width: 50px;">
+                                    </div>
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-6 mb-3">
+                                    <label for="restringe_nueva_cita">restringe_nueva_cita:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="restringe_nueva_cita" value="0">
+                                        <input class="form-check-input" type="checkbox" id="restringe_nueva_cita" name="restringe_nueva_cita" value="1">
+                                        <label class="form-check-label" for="restringe_nueva_cita">Si/No</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="mostrar_en_hc">mostrar_en_hc:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="mostrar_en_hc" value="0">
+                                        <input class="form-check-input" type="checkbox" id="mostrar_en_hc" name="mostrar_en_hc" value="1">
+                                        <label class="form-check-label" for="mostrar_en_hc">Si/No</label>
+                                    </div>
                                 </div>
                             </div>                            <div class="row">                                <div class="col-md-6 mb-3">
                                     <label for="orden">orden:</label>
@@ -317,7 +355,26 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 </div>
                                  <div class="col-md-6 mb-3">
                                      <label for="color">color:</label>
-                                     <input type="text" class="form-control" id="color" name="color">
+                                     <div class="input-group">
+                                         <input type="text" class="form-control" id="color" name="color">
+                                         <input type="color" class="form-control form-control-color" id="color_picker_actualizar" value="#000000" title="Seleccione un color" style="width: 50px;">
+                                     </div>
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
+                                     <label for="restringe_nueva_cita">restringe_nueva_cita:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="restringe_nueva_cita" value="0">
+                                        <input class="form-check-input" type="checkbox" id="restringe_nueva_cita" name="restringe_nueva_cita" value="1">
+                                        <label class="form-check-label" for="restringe_nueva_cita">Si/No</label>
+                                    </div>
+                                </div>
+                                 <div class="col-md-6 mb-3">
+                                     <label for="mostrar_en_hc">mostrar_en_hc:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="mostrar_en_hc" value="0">
+                                        <input class="form-check-input" type="checkbox" id="mostrar_en_hc" name="mostrar_en_hc" value="1">
+                                        <label class="form-check-label" for="mostrar_en_hc">Si/No</label>
+                                    </div>
                                 </div>
                             </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
                                      <label for="orden">orden:</label>
@@ -433,11 +490,33 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                 }
                 var valorcolor = button.getAttribute('data-color');
                 var inputcolor = modal.querySelector('#color');
+                var pickercolor = modal.querySelector('#color_picker_actualizar');
                 if(inputcolor) {
                     if (inputcolor.type === 'checkbox') {
                         inputcolor.checked = (valorcolor === 'activo');
                     } else {
                         inputcolor.value = valorcolor;
+                    }
+                }
+                if(pickercolor) {
+                    pickercolor.value = (valorcolor && valorcolor.startsWith('#')) ? valorcolor : '#000000';
+                }
+                var valorrestringe_nueva_cita = button.getAttribute('data-restringe_nueva_cita');
+                var inputrestringe_nueva_cita = modal.querySelector('#restringe_nueva_cita');
+                if(inputrestringe_nueva_cita) {
+                    if (inputrestringe_nueva_cita.type === 'checkbox') {
+                        inputrestringe_nueva_cita.checked = (valorrestringe_nueva_cita == '1' || valorrestringe_nueva_cita == 'true');
+                    } else {
+                        inputrestringe_nueva_cita.value = valorrestringe_nueva_cita;
+                    }
+                }
+                var valormostrar_en_hc = button.getAttribute('data-mostrar_en_hc');
+                var inputmostrar_en_hc = modal.querySelector('#mostrar_en_hc');
+                if(inputmostrar_en_hc) {
+                    if (inputmostrar_en_hc.type === 'checkbox') {
+                        inputmostrar_en_hc.checked = (valormostrar_en_hc == '1' || valormostrar_en_hc == 'true');
+                    } else {
+                        inputmostrar_en_hc.value = valormostrar_en_hc;
                     }
                 }
                 var valororden = button.getAttribute('data-orden');
@@ -517,6 +596,33 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     alert('Error al procesar la solicitud.');
                 });
             });
+        });
+
+        // Sincronización de color pickers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal Crear
+            const colorInput = document.getElementById('color');
+            const colorPicker = document.getElementById('color_picker');
+            if(colorInput && colorPicker) {
+                colorInput.addEventListener('input', (e) => {
+                    if(/^#[0-9A-F]{6}$/i.test(e.target.value)) colorPicker.value = e.target.value;
+                });
+                colorPicker.addEventListener('input', (e) => {
+                    colorInput.value = e.target.value.toUpperCase();
+                });
+            }
+
+            // Modal Actualizar
+            const colorInputAct = document.querySelector('#modalActualizar #color');
+            const colorPickerAct = document.getElementById('color_picker_actualizar');
+            if(colorInputAct && colorPickerAct) {
+                colorInputAct.addEventListener('input', (e) => {
+                    if(/^#[0-9A-F]{6}$/i.test(e.target.value)) colorPickerAct.value = e.target.value;
+                });
+                colorPickerAct.addEventListener('input', (e) => {
+                    colorInputAct.value = e.target.value.toUpperCase();
+                });
+            }
         });
 
         function eliminar(id) {

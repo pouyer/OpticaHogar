@@ -67,13 +67,20 @@ class ModeloReporteHistoria {
                        ec.nombre as estado_nombre,
                        ec.color as estado_color,
                        d.codigo as cie10_codigo,
-                       d.descripcion as cie10_descripcion
+                       d.descripcion as cie10_descripcion,
+                       tl.nombre as lentes_tipo_nombre,
+                       ml.nombre as lentes_material_nombre,
+                       ul.nombre as uso_lentes_nombre
                 FROM citas_control cc
                 LEFT JOIN tipos_consulta tc ON cc.tipo_consulta_id = tc.id
                 LEFT JOIN profesionales_salud ps ON cc.profesional_id = ps.id
                 LEFT JOIN estados_cita ec ON cc.estado_cita_id = ec.id
                 LEFT JOIN diagnosticos_cie10 d ON cc.cie10_id = d.id
+                LEFT JOIN tipos_lentes tl ON cc.lentes_tipo_id = tl.id
+                LEFT JOIN materiales_lentes ml ON cc.lentes_material_id = ml.id
+                LEFT JOIN usos_lentes ul ON cc.uso_lentes_id = ul.id
                 WHERE cc.paciente_id = ?
+                and ec.mostrar_en_hc = 1
                 ORDER BY cc.fecha_cita ASC, cc.hora_cita ASC";
         
         $stmt = $this->conexion->prepare($sql);

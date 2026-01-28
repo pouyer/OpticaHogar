@@ -722,6 +722,7 @@ class ModeloPacientes {
         }
 
         $query = "SELECT `pacientes`.* , 
+                         CONCAT(`pacientes`.primer_nombre, ' ', COALESCE(`pacientes`.segundo_nombre,''), ' ', `pacientes`.primer_apellido, ' ', COALESCE(`pacientes`.segundo_apellido,'')) AS nombre_completo,
                          `tipos_identificacion`.`codigo` as `tipo_identificacion_id_display` , `generos`.`nombre` as `genero_id_display` , `grupos_sanguineos`.`codigo` as `grupo_sanguineo_id_display` , `eps`.`nombre` as `eps_id_display` , `ocupaciones`.`nombre` as `ocupacion_id_display` , `estados_civiles`.`nombre` as `estado_civil_id_display` , `parentescos`.`nombre` as `parentesco_id_display` , `estados_paciente`.`codigo` as `estado_paciente_id_display`, `paises`.`nombre_pais` as `id_pais_display`  FROM pacientes";
         $query .= " LEFT JOIN `tipos_identificacion` ON `pacientes`.`tipo_identificacion_id` = `tipos_identificacion`.`id` ";
         $query .= " LEFT JOIN `generos` ON `pacientes`.`genero_id` = `generos`.`id` ";

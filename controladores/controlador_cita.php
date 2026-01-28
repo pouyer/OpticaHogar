@@ -46,6 +46,8 @@ class ControladorCita {
                 'tiposOrigen' => $this->modelo->getTiposOrigenEnfermedad(),
                 'estadosCita' => $this->modelo->getEstadosCita(),
                 'asistentes' => $this->modelo->getAsistentes(),
+                'mensaje' => $_GET['mensaje'] ?? '',
+                'tipo_alerta' => $_GET['tipo_alerta'] ?? 'info',
             ];
         } catch (Exception $e) {
             error_log("Error cargando catálogos: " . $e->getMessage());
@@ -61,22 +63,6 @@ class ControladorCita {
             ];
         }
         
-        // Verificar que el usuario esté asociado a un profesional
-        $profesional = $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0);
-        if (!$profesional) {
-            $datos['error'] = 'El usuario no está asociado a un profesional activo. Contacte al administrador.';
-            // Crear profesional por defecto para evitar errores en la vista
-            $datos['profesional_logueado'] = [
-                'id' => 0,
-                'primer_nombre' => 'No',
-                'primer_apellido' => 'Asignado',
-                'especialidad' => 'N/A'
-            ];
-            return $datos;
-        }
-
-        $datos['profesional_logueado'] = $profesional;
-
         // --- PRE-CARGA DE PACIENTE (Desde Reporte) ---
         if (isset($_GET['paciente_id']) && !isset($cita)) {
             $pac_id = (int)$_GET['paciente_id'];
@@ -100,6 +86,23 @@ class ControladorCita {
                 $datos['tipo_consulta_sugerido'] = $this->modelo->tieneCitasPrevias($pac_id) ? 2 : 1; // 2=Control, 1=Primera
             }
         }
+        
+        // Verificar que el usuario esté asociado a un profesional
+        $profesional = $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0);
+        if (!$profesional) {
+            $datos['mensaje'] = 'El usuario no está asociado a un profesional activo. Contacte al administrador.';
+            $datos['tipo_alerta'] = 'danger';
+            // Crear profesional por defecto para evitar errores en la vista
+            $datos['profesional_logueado'] = [
+                'id' => 0,
+                'primer_nombre' => 'No',
+                'primer_apellido' => 'Asignado',
+                'especialidad' => 'N/A'
+            ];
+            return $datos;
+        }
+
+        $datos['profesional_logueado'] = $profesional;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['id'])) {
             $post = $_POST;
@@ -114,11 +117,21 @@ class ControladorCita {
                 $post[$campo] = empty($post[$campo]) ? null : $post[$campo];
             }
 
+            // Verificar restricción de nueva cita
+            $restriccion = $this->modelo->getCitaRestringida($post['paciente_id']);
+            if ($restriccion) {
+                $datos['mensaje'] = "No se puede crear una nueva cita para este paciente porque tiene una cita en proceso (Estado: " . $restriccion['estado_nombre'] . ").";
+                $datos['tipo_alerta'] = "danger";
+                return $datos;
+            }
+
             try {
-                if ($this->modelo->guardarCita($post)) {
-                    $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'CREATE', 'citas_control', 'Nueva cita creada - Paciente ID: ' . $post['paciente_id']);
-                    $datos['mensaje'] = "Control optométrico guardado exitosamente.";
-                    $datos['tipo_alerta'] = "success";
+                $nuevoId = $this->modelo->guardarCita($post);
+                if ($nuevoId) {
+                    $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'CREATE', 'citas_control', 'Nueva cita creada - ID: ' . $nuevoId);
+                    // Redirigir a edición para evitar re-envio con F5
+                    header("Location: controlador_cita.php?action=editar&id=" . $nuevoId . "&mensaje=Control optométrico guardado exitosamente&tipo_alerta=success");
+                    exit;
                 } else {
                     $datos['mensaje'] = "Error al guardar el control.";
                     $datos['tipo_alerta'] = "danger";
@@ -137,6 +150,17 @@ class ControladorCita {
         $tiene = $this->modelo->tieneCitasPrevias($paciente_id);
         header('Content-Type: application/json');
         echo json_encode(['tiene_citas' => $tiene]);
+        exit;
+    }
+
+    // Método para verificar si un paciente tiene citas restringidas (AJAX)
+    public function verificarRestriccion($paciente_id) {
+        $restriccion = $this->modelo->getCitaRestringida($paciente_id);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'restringido' => !empty($restriccion),
+            'estado_nombre' => $restriccion['estado_nombre'] ?? ''
+        ]);
         exit;
     }
 
@@ -226,7 +250,9 @@ class ControladorCita {
                 'tiposOrigen' => $this->modelo->getTiposOrigenEnfermedad(),
                 'estadosCita' => $this->modelo->getEstadosCita(),
                 'asistentes' => $this->modelo->getAsistentes(),
-                'profesional_logueado' => $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0)
+                'profesional_logueado' => $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0),
+                'mensaje' => $_GET['mensaje'] ?? '',
+                'tipo_alerta' => $_GET['tipo_alerta'] ?? 'info',
             ];
         } catch (Exception $e) {
             error_log("Error cargando catálogos en editar: " . $e->getMessage());
@@ -357,6 +383,11 @@ switch ($accion) {
     case 'verificar_citas':
         $id = $_GET['paciente_id'] ?? 0;
         $controlador->verificarCitas($id);
+        break;
+
+    case 'verificar_restriccion':
+        $id = $_GET['paciente_id'] ?? 0;
+        $controlador->verificarRestriccion($id);
         break;
 
     case 'listar':

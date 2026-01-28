@@ -5,7 +5,7 @@
 require_once '../accesos/verificar_sesion.php';
 
 // Cargar permisos
-$mi_programa = 'vista_cita.php';
+$mi_programa = 'vista_cita_listado.php';
 $permisos = $_SESSION['permisos'][$mi_programa] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
 
 $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
@@ -21,9 +21,17 @@ if (!isset($registros) || !isset($totalRegistros)) {
     if (file_exists('../modelos/modelo_cita.php')) {
         require_once '../modelos/modelo_cita.php';
         $modelo = new ModeloCita();
-        $totalRegistros = $modelo->contarRegistros();
+        
+        $termino = $_GET['busqueda'] ?? '';
         $offset = ($paginaActual - 1) * $registrosPorPagina;
-        $registros = $modelo->obtenerTodos($registrosPorPagina, $offset, $sort, $dir);
+
+        if (!empty($termino)) {
+            $totalRegistros = $modelo->contarRegistrosPorBusqueda($termino);
+            $registros = $modelo->buscar($termino, $registrosPorPagina, $offset, $sort, $dir);
+        } else {
+            $totalRegistros = $modelo->contarRegistros();
+            $registros = $modelo->obtenerTodos($registrosPorPagina, $offset, $sort, $dir);
+        }
     } else {
         $registros = [];
         $totalRegistros = 0;
@@ -72,6 +80,18 @@ if (!isset($registros) || !isset($totalRegistros)) {
             </div>
 
             <div class="card-body p-4">
+                <!-- Buscador -->
+                <form method="GET" action="vista_cita_listado.php" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" name="busqueda" class="form-control search-box p-2" placeholder="Buscar por paciente, ID, fecha o profesional..." value="<?php echo isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : ''; ?>">
+                        <input type="hidden" name="action" value="listar">
+                        <input type="hidden" name="registrosPorPagina" value="<?= $registrosPorPagina ?>">
+                        <button type="submit" class="btn search-btn px-4 bg-primary text-white"><i class="icon-search"></i></button>
+                        <?php if(isset($_GET['busqueda']) && $_GET['busqueda'] !== ''): ?>
+                            <a href="vista_cita_listado.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
+                        <?php endif; ?>
+                    </div>
+                </form>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead>

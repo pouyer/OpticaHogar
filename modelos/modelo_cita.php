@@ -57,6 +57,31 @@ class ModeloCita {
         return ($resultado['total'] > 0);
     }
 
+    /**
+     * Verifica si el paciente tiene una cita activa en un estado que restringe nuevas citas.
+     * @param int $paciente_id
+     * @return array|null Datos de la cita restringida o null si no tiene.
+     */
+    public function getCitaRestringida($paciente_id) {
+        $sql = "SELECT c.id, e.nombre as estado_nombre 
+                FROM citas_control c
+                JOIN estados_cita e ON c.estado_cita_id = e.id
+                WHERE c.paciente_id = ? 
+                AND e.restringe_nueva_cita = 1
+                LIMIT 1";
+        
+        $stmt = $this->conexion->prepare($sql);
+        if (!$stmt) {
+            error_log("Error preparando consulta getCitaRestringida: " . $this->conexion->error);
+            return null;
+        }
+        
+        $stmt->bind_param('i', $paciente_id);
+        $stmt->execute();
+        $resultado = $stmt->get_result()->fetch_assoc();
+        return $resultado;
+    }
+
     // Buscar pacientes con autocompletado + edad usando f_anos()
     public function buscarPacientes($termino) {
         $termino = '%' . $termino . '%';
@@ -178,7 +203,7 @@ class ModeloCita {
     }
 
     public function getEstadosCita() {
-        $sql = "SELECT id, nombre, color FROM estados_cita WHERE estado = 'activo' ORDER BY nombre";
+        $sql = "SELECT id, nombre, color FROM estados_cita WHERE estado = 'activo' ORDER BY orden , nombre";
         $resultado = $this->conexion->query($sql);
         $estados = [];
         if ($resultado) {
@@ -315,7 +340,10 @@ class ModeloCita {
             $stmt->bind_param($tipos, ...$params);
         }
         
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            return $this->conexion->insert_id;
+        }
+        return false;
     }
 
     // Obtener una cita por ID
@@ -393,6 +421,85 @@ class ModeloCita {
         $stmt->execute();
         $resultado = $stmt->get_result();
         return $resultado ? $resultado->fetch_assoc()['total'] : 0;
+    }
+
+    public function contarRegistrosPorBusqueda($termino = '') {
+        if (empty($termino)) return $this->contarRegistros();
+        
+        $sql = "SELECT COUNT(*) as total 
+                FROM citas_control cc
+                JOIN pacientes p ON cc.paciente_id = p.id
+                JOIN profesionales_salud ps ON cc.profesional_id = ps.id
+                LEFT JOIN tipos_consulta tc ON cc.tipo_consulta_id = tc.id
+                LEFT JOIN estados_cita ec ON cc.estado_cita_id = ec.id
+                WHERE CONVERT(CONCAT_WS(' ', 
+                    cc.id, 
+                    cc.fecha_cita, 
+                    p.identificacion, 
+                    p.primer_nombre, 
+                    p.primer_apellido,
+                    ps.primer_nombre,
+                    ps.primer_apellido,
+                    tc.nombre,
+                    ec.nombre
+                ) USING utf8mb4) LIKE ?";
+        
+        $stmt = $this->conexion->prepare($sql);
+        $termino = '%' . $termino . '%';
+        $stmt->bind_param('s', $termino);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado ? $resultado->fetch_assoc()['total'] : 0;
+    }
+
+    public function buscar($termino, $registrosPorPagina, $offset, $orderBy = 'id', $orderDir = 'DESC') {
+        $allowedColumns = ['`cc`.`id`', '`cc`.`fecha_cita`', '`cc`.`hora_cita`', '`p`.`identificacion`', '`p`.`primer_nombre`', '`tc`.`nombre`', '`ps`.`primer_nombre`', '`ec`.`nombre`'];
+        $orderByClean = str_replace(['`', ' '], '', $orderBy);
+        $isValid = false;
+        foreach($allowedColumns as $ac) {
+            if (str_replace(['`', ' '], '', $ac) === $orderByClean) {
+                $isValid = true;
+                break;
+            }
+        }
+        $orderSQL = $isValid ? " ORDER BY $orderBy $orderDir " : " ORDER BY `cc`.`id` DESC ";
+
+        $sql = "SELECT cc.*, 
+                       p.identificacion AS paciente_identificacion,
+                       CONCAT(p.primer_nombre, ' ', COALESCE(p.segundo_nombre,''), ' ', p.primer_apellido, ' ', COALESCE(p.segundo_apellido,'')) AS paciente_nombre,
+                       CONCAT(ps.primer_nombre, ' ', COALESCE(ps.segundo_nombre,''), ' ', ps.primer_apellido, ' ', COALESCE(ps.segundo_apellido,'')) AS profesional_nombre,
+                       tc.nombre AS tipo_consulta_nombre,
+                       ec.nombre AS estado_cita_nombre,
+                       ec.color AS estado_cita_color
+                FROM citas_control cc
+                JOIN pacientes p ON cc.paciente_id = p.id
+                JOIN profesionales_salud ps ON cc.profesional_id = ps.id
+                LEFT JOIN tipos_consulta tc ON cc.tipo_consulta_id = tc.id
+                LEFT JOIN estados_cita ec ON cc.estado_cita_id = ec.id
+                WHERE CONVERT(CONCAT_WS(' ', 
+                    cc.id, 
+                    cc.fecha_cita, 
+                    p.identificacion, 
+                    p.primer_nombre, 
+                    p.primer_apellido,
+                    ps.primer_nombre,
+                    ps.primer_apellido,
+                    tc.nombre,
+                    ec.nombre
+                ) USING utf8mb4) LIKE ?
+                $orderSQL
+                LIMIT ? OFFSET ?";
+        
+        $stmt = $this->conexion->prepare($sql);
+        $termino = '%' . $termino . '%';
+        $stmt->bind_param('sii', $termino, $registrosPorPagina, $offset);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        $citas = [];
+        while ($row = $resultado->fetch_assoc()) {
+            $citas[] = $row;
+        }
+        return $citas;
     }
 
     // Actualizar cita

@@ -109,14 +109,19 @@ class ControladorReporteHistoria {
     }
 
     private function generarPDF($paciente, $anamnesis, $historial) {
-        // En una implementación real, aquí se usaría dompdf o similar
         ob_start();
         include '../vistas/vista_historia_clinica_reporte.php';
         $html = ob_get_clean();
 
-        // Simulación para impresión simple si no hay dompdf
         echo $html;
-        echo "<script>window.print();</script>";
+        // Pequeño retraso para asegurar que el DOM y el Título estén listos antes de llamar a print
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            });
+        </script>";
     }
 }
 

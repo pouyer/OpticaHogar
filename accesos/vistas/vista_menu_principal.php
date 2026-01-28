@@ -39,23 +39,28 @@ if (file_exists(__DIR__ . '/../../.env')) {
 <div class="header-container">
         <div class="container-fluid">
             <div class="row align-items-center">
-                <!-- Columna Logo: Alineada con el menú lateral (col-md-2) -->
-                <div class="col-md-2 text-center">
-                    <?php 
-                    $appLogo = getenv('APP_LOGO');
-                    if ($appLogo && file_exists(__DIR__ . '/../../' . $appLogo)) {
-                        // img-fluid para que no desborde el ancho de la columna
-                        echo '<img src="../../' . $appLogo . '" alt="Logo" class="img-fluid" style="max-height: 60px;">';
-                    } else {
-                        echo '<h4>' . APP_NAME . '</h4>';
-                    }
-                    ?>
+                <!-- Columna Logo y Toggle: Alineada con el menú lateral -->
+                <!-- Columna Logo y Toggle -->
+                <div id="headerSidebar">
+                    <button id="sidebarToggle" class="btn btn-link text-primary p-0" style="font-size: 1.5rem; text-decoration: none;">
+                        <i class="icon-menu"></i>
+                    </button>
+                    <div class="logo-text text-center">
+                        <?php 
+                        $appLogo = getenv('APP_LOGO');
+                        if ($appLogo && file_exists(__DIR__ . '/../../' . $appLogo)) {
+                            echo '<img src="../../' . $appLogo . '" alt="Logo" style="max-height: 40px;">';
+                        } else {
+                            echo '<h5 class="m-0">' . APP_NAME . '</h5>';
+                        }
+                        ?>
+                    </div>
                 </div>
                 
-                <!-- Columna Info Usuario: Alineada con el contenido (col-md-10) -->
-                <div class="col-md-10">
+                <!-- Columna Info Usuario -->
+                <div id="headerContent">
                     <div class="user-info d-flex justify-content-between align-items-center">
-                        <h2 class="welcome-text m-0">Bienvenido, <?php echo htmlspecialchars($usuario_nombre); ?></h2> 
+                        <h2 class="welcome-text m-0">Bienvenido(a), <?php echo htmlspecialchars($usuario_nombre); ?></h2> 
                         <div class="d-flex gap-2">
                             <a href="vista_cambiar_password.php?source=menu" class="btn btn-warning" target="iframeTrabajo">
                                 <i class="icon-lock"></i> Cambiar Contraseña
@@ -70,9 +75,12 @@ if (file_exists(__DIR__ . '/../../.env')) {
         </div>
 </div>
 
-<div class="main-content-row container-fluid">
-    <div class="row w-100 m-0">
-        <div class="col-md-2 menu-fondo p-0">
+<div class="main-content-row">
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div id="mainSidebar" class="menu-fondo p-0">
+            <div class="d-md-none text-end p-2">
+                <button id="closeSidebar" class="btn btn-sm btn-light"><i class="icon-cancel"></i></button>
+            </div>
             <h2 class="text-center">Óptica Hogar</h2>
             <ul class="list-group">
                 <?php
@@ -89,7 +97,7 @@ if (file_exists(__DIR__ . '/../../.env')) {
                         <!-- Cambié el icono a un <i> para que se vea mejor -->
                         <strong class="accordion-button" onclick="toggleMenu(this)">
                             <i class="<?php echo htmlspecialchars($modulo['icono_modulo']); ?>">&nbsp;</i> <!-- Mostrar el icono -->
-                            <?php echo htmlspecialchars($modulo['modulo']); ?>
+                            <span><?php echo htmlspecialchars($modulo['modulo']); ?></span>
                         </strong>
                         
                         <ul class="nested-nav">
@@ -107,7 +115,7 @@ if (file_exists(__DIR__ . '/../../.env')) {
                                     <li>
                                         <a href="<?php echo htmlspecialchars($url); ?>" target="iframeTrabajo">
                                             <i class="<?php echo htmlspecialchars($menu['icono_programa']); ?>"> </i>
-                                            <?php echo htmlspecialchars($menu['nombre_menu']); ?>
+                                            <span><?php echo htmlspecialchars($menu['nombre_menu']); ?></span>
                                         </a>
                                     </li>
                                 <?php endforeach;
@@ -117,18 +125,18 @@ if (file_exists(__DIR__ . '/../../.env')) {
                 <?php endforeach; ?>
             </ul>
         </div>
-        <div class="col-md-10 p-0 iframe-container">
+        <div id="mainContent" class="iframe-container">
             <iframe name="iframeTrabajo" src="vista_fondo.php"></iframe>
         </div>
     </div>
-</div>
-</div>
+
 
 <footer class="footer">
     <div class="container">
         <span><?php echo htmlspecialchars(getVersionInfo()); ?></span>
     </div>
 </footer>
+</div>
 
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -141,6 +149,62 @@ if (file_exists(__DIR__ . '/../../.env')) {
         if (nestedNav) {
             nestedNav.style.display = nestedNav.style.display === 'block' ? 'none' : 'block';
         }
+    }
+
+    // Lógica para colapsar menú lateral
+    const sidebar = document.getElementById('mainSidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('sidebarOverlay');
+    const wrapper = document.querySelector('.app-wrapper');
+
+    function updateSidebarState(isCollapsed) {
+        if (isCollapsed) {
+            wrapper.classList.add('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', 'true');
+        } else {
+            wrapper.classList.remove('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+    }
+
+    // Inicializar estado desde localStorage (solo para desktop)
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+        updateSidebarState(true);
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.innerWidth <= 768) {
+                // Modo Móvil: Abrir/Cerrar panel
+                wrapper.classList.toggle('mobile-sidebar-open');
+            } else {
+                // Modo Desktop: Colapsar/Expandir (íconos)
+                const isCollapsed = wrapper.classList.contains('sidebar-collapsed');
+                updateSidebarState(!isCollapsed);
+            }
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            wrapper.classList.remove('mobile-sidebar-open');
+        });
+    }
+
+    // Cerrar menú al hacer clic en un enlace (solo en móvil)
+    sidebar.addEventListener('click', (e) => {
+        if (e.target.closest('a') && window.innerWidth <= 768) {
+            wrapper.classList.remove('mobile-sidebar-open');
+        }
+    });
+
+    // Manejar el botón de cerrar interno si existe
+    const closeBtn = document.getElementById('closeSidebar');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            wrapper.classList.remove('mobile-sidebar-open');
+        });
     }
 </script>
 </body>

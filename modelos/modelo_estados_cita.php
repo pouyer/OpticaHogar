@@ -28,7 +28,7 @@ class ModeloEstados_cita {
     public function contarRegistrosPorBusqueda($termino) {
         $query = "SELECT COUNT(*) as total FROM estados_cita ";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`, `estados_cita`.`restringe_nueva_cita`, `estados_cita`.`mostrar_en_hc`) LIKE ?";
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -40,7 +40,7 @@ class ModeloEstados_cita {
     // Obtener todos los registros
     public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas para evitar inyección SQL
-        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`'];
+        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`', '`estados_cita`.`restringe_nueva_cita`', '`estados_cita`.`mostrar_en_hc`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -166,6 +166,20 @@ class ModeloEstados_cita {
             $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
             $tipos .= 'i';
         }
+        // Campo: restringe_nueva_cita
+        if (array_key_exists('restringe_nueva_cita', $datos)) {
+            $campos[] = '`restringe_nueva_cita`';
+            $valores[] = '?';
+            $params[] = ($datos['restringe_nueva_cita'] === '' || $datos['restringe_nueva_cita'] === null) ? null : (int)$datos['restringe_nueva_cita'];
+            $tipos .= 'i';
+        }
+        // Campo: mostrar_en_hc
+        if (array_key_exists('mostrar_en_hc', $datos)) {
+            $campos[] = '`mostrar_en_hc`';
+            $valores[] = '?';
+            $params[] = ($datos['mostrar_en_hc'] === '' || $datos['mostrar_en_hc'] === null) ? null : (int)$datos['mostrar_en_hc'];
+            $tipos .= 'i';
+        }
 
         $query = "INSERT INTO estados_cita (" . implode(', ', $campos) . ") VALUES (" . implode(', ', $valores) . ")";
         $stmt = $this->conexion->prepare($query);
@@ -248,6 +262,18 @@ class ModeloEstados_cita {
             $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
             $tipos .= 'i';
         }
+        // Campo: restringe_nueva_cita
+        if (array_key_exists('restringe_nueva_cita', $datos)) {
+            $actualizaciones[] = "`restringe_nueva_cita` = ?";
+            $params[] = ($datos['restringe_nueva_cita'] === '' || $datos['restringe_nueva_cita'] === null) ? null : (int)$datos['restringe_nueva_cita'];
+            $tipos .= 'i';
+        }
+        // Campo: mostrar_en_hc
+        if (array_key_exists('mostrar_en_hc', $datos)) {
+            $actualizaciones[] = "`mostrar_en_hc` = ?";
+            $params[] = ($datos['mostrar_en_hc'] === '' || $datos['mostrar_en_hc'] === null) ? null : (int)$datos['mostrar_en_hc'];
+            $tipos .= 'i';
+        }
 
         $params[] = $id;
         $tipos .= $tipos_pk;
@@ -271,7 +297,7 @@ class ModeloEstados_cita {
     // Función de búsqueda (reutilizada)
     public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas
-        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`'];
+        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`', '`estados_cita`.`restringe_nueva_cita`', '`estados_cita`.`mostrar_en_hc`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -294,7 +320,7 @@ class ModeloEstados_cita {
 
         $query = "SELECT `estados_cita`.*  FROM estados_cita";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`, `estados_cita`.`restringe_nueva_cita`, `estados_cita`.`mostrar_en_hc`) LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -310,9 +336,9 @@ class ModeloEstados_cita {
 
     public function contarPorCampo($campo, $valor) {
         // Validar campo
-        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`'];
+        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`', '`estados_cita`.`restringe_nueva_cita`', '`estados_cita`.`mostrar_en_hc`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'restringe_nueva_cita', 'mostrar_en_hc'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -351,8 +377,8 @@ class ModeloEstados_cita {
 
     public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validación de campo idéntica a contarPorCampo
-        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`'];
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`', '`estados_cita`.`restringe_nueva_cita`', '`estados_cita`.`mostrar_en_hc`'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'restringe_nueva_cita', 'mostrar_en_hc'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -412,7 +438,7 @@ class ModeloEstados_cita {
     // Funcion de exportar datos
     public function exportarDatos($termino = '', $campoFiltro = '') {
         try {
-            $query = "SELECT `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden` FROM estados_cita";
+            $query = "SELECT `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`, `estados_cita`.`restringe_nueva_cita`, `estados_cita`.`mostrar_en_hc` FROM estados_cita";
             $query .= " WHERE ";
             
             $usarFiltroCampo = false;
@@ -420,8 +446,8 @@ class ModeloEstados_cita {
 
             if (!empty($campoFiltro)) {
                  // Validar campo
-                $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`'];
-                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+                $allowedColumns = ['`estados_cita`.`id`', '`estados_cita`.`codigo`', '`estados_cita`.`nombre`', '`estados_cita`.`descripcion`', '`estados_cita`.`color`', '`estados_cita`.`estado`', '`estados_cita`.`usuario_id_inserto`', '`estados_cita`.`fecha_insercion`', '`estados_cita`.`usuario_id_actualizo`', '`estados_cita`.`fecha_actualizacion`', '`estados_cita`.`orden`', '`estados_cita`.`restringe_nueva_cita`', '`estados_cita`.`mostrar_en_hc`'];
+                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'restringe_nueva_cita', 'mostrar_en_hc'];
                 
                 $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
                 
@@ -446,7 +472,7 @@ class ModeloEstados_cita {
             if ($usarFiltroCampo) {
                  $query .= $columnaSQL . " LIKE ?";
             } else {
-                $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`) LIKE ?";
+                $query .= "CONCAT_WS(' ', `estados_cita`.`id`, `estados_cita`.`codigo`, `estados_cita`.`nombre`, `estados_cita`.`descripcion`, `estados_cita`.`color`, `estados_cita`.`estado`, `estados_cita`.`usuario_id_inserto`, `estados_cita`.`fecha_insercion`, `estados_cita`.`usuario_id_actualizo`, `estados_cita`.`fecha_actualizacion`, `estados_cita`.`orden`, `estados_cita`.`restringe_nueva_cita`, `estados_cita`.`mostrar_en_hc`) LIKE ?";
             }
 
             if (!$this->conexion) {

@@ -29,14 +29,22 @@ endif;
         .oi-bg { background-color: #fff3e0; border-radius: 8px; padding: 15px; }
         .section-content { padding: 2rem; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 <div class="container">
     <h1 class="text-center mb-5 fw-bold"><?= isset($cita) ? 'Editar Control Optométrico' : 'Nuevo Control Optométrico' ?></h1>
 
-    <?php if (isset($mensaje)): ?>
-        <div class="alert alert-<?= $tipo_alerta ?> alert-dismissible fade show">
+    <?php if (isset($mensaje) && !empty($mensaje)): ?>
+        <div class="alert alert-<?= $tipo_alerta ?? 'info' ?> alert-dismissible fade show">
             <?= htmlspecialchars($mensaje) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($error) && !empty($error)): ?>
+        <div class="alert alert-danger alert-dismissible fade show">
+            <?= htmlspecialchars($error) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
@@ -490,7 +498,7 @@ endif;
                                 <select name="estado_cita_id" class="form-select">
                                     <?php if (isset($estadosCita) && is_array($estadosCita)): ?>
                                         <?php foreach ($estadosCita as $ec): ?>
-                                            <option value="<?= $ec['id'] ?>" <?= (isset($cita) && isset($cita['estado_cita_id']) && $cita['estado_cita_id'] == $ec['id']) ? 'selected' : (($ec['id'] == 1 && !isset($cita)) ? 'selected' : '') ?>><?= htmlspecialchars($ec['nombre']) ?></option>
+                                            <option value="<?= $ec['id'] ?>" <?= (isset($cita) && isset($cita['estado_cita_id']) && $cita['estado_cita_id'] == $ec['id']) ? 'selected' : (($ec['id'] == 6 && !isset($cita)) ? 'selected' : '') ?>><?= htmlspecialchars($ec['nombre']) ?></option>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </select>
@@ -566,6 +574,40 @@ inputBuscar.addEventListener('input', function() {
                         sugerencias.style.display = 'none';
                         inputBuscar.value = p.texto;
                         
+                        // Verificar restricción de nueva cita
+                        fetch(`../controladores/controlador_cita.php?action=verificar_restriccion&paciente_id=${p.id}`)
+                            .then(r => r.json())
+                            .then(res => {
+                                const submitBtn = document.querySelector('button[type="submit"]');
+                                const inputs = document.querySelectorAll('input:not(#buscar_paciente), select, textarea');
+                                
+                                if (res.restringido) {
+                                    Swal.fire({
+                                        title: '¡Atención!',
+                                        text: `No puede crear una nueva cita para este paciente porque tiene citas en proceso (Estado: ${res.estado_nombre}). Por favor finalice las citas abiertas antes de continuar.`,
+                                        icon: 'warning',
+                                        confirmButtonText: 'Entendido',
+                                        allowOutsideClick: false
+                                    });
+                                    
+                                    if (submitBtn) {
+                                        submitBtn.disabled = true;
+                                        submitBtn.classList.remove('btn-primary');
+                                        submitBtn.classList.add('btn-secondary');
+                                        submitBtn.innerHTML = '<i class="bi bi-lock-fill"></i> Registro Bloqueado';
+                                    }
+                                    inputs.forEach(el => el.disabled = true);
+                                } else {
+                                    if (submitBtn) {
+                                        submitBtn.disabled = false;
+                                        submitBtn.classList.remove('btn-secondary');
+                                        submitBtn.classList.add('btn-primary');
+                                        submitBtn.innerHTML = 'Guardar Control Optométrico';
+                                    }
+                                    inputs.forEach(el => el.disabled = false);
+                                }
+                            });
+
                         // Lógica de auto-selección de tipo de consulta
                         const selectTipo = document.querySelector('select[name="tipo_consulta_id"]');
                         if (selectTipo) {
@@ -678,6 +720,41 @@ document.addEventListener('click', e => {
         }
     });
     <?php endif; ?>
+<?php endif; ?>
+
+<?php if (isset($paciente_precargado)): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const pId = <?= $paciente_precargado['id'] ?>;
+    const urlCheck = `../controladores/controlador_cita.php?action=verificar_restriccion&paciente_id=${pId}`;
+    
+    fetch(urlCheck)
+        .then(r => r.json())
+        .then(res => {
+            if (res.restringido) {
+                Swal.fire({
+                    title: '¡Atención!',
+                    text: `No puede crear una nueva cita para este paciente porque tiene citas en proceso (Estado: ${res.estado_nombre}). Por favor finalice las citas abiertas antes de continuar.`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    allowOutsideClick: false
+                });
+                
+                // Bloquear el formulario
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('btn-primary');
+                    submitBtn.classList.add('btn-secondary');
+                    submitBtn.innerHTML = '<i class="bi bi-lock-fill"></i> Registro Bloqueado';
+                }
+                
+                // Deshabilitar campos principales
+                const inputs = document.querySelectorAll('input:not(#buscar_paciente), select, textarea');
+                inputs.forEach(el => el.disabled = true);
+            }
+        })
+        .catch(err => console.error('Error validando restricciones:', err));
+});
 <?php endif; ?>
 </script>
 </body>
