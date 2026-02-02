@@ -356,7 +356,8 @@ class ModeloCita {
                        d.codigo AS cie10_codigo,
                        d.descripcion AS cie10_descripcion,
                        e.bloquea_registro,
-                       e.mostrar_en_hc
+                       e.mostrar_en_hc,
+                       ps.registro_profesional
                 FROM citas_control cc
                 JOIN pacientes p ON cc.paciente_id = p.id
                 JOIN profesionales_salud ps ON cc.profesional_id = ps.id

@@ -123,7 +123,8 @@
         <div style="margin-top: 60px; display: flex; justify-content: space-between;">
             <div style="width: 250px; border-top: 1px solid #333; text-align: center; padding-top: 5px; font-size: 0.9em;">
                 Firma del Profesional<br>
-                <?php echo htmlspecialchars($cita['profesional_nombre'] ?? ''); ?>
+                <?php echo htmlspecialchars($cita['profesional_nombre'] ?? ''); ?><br>
+                <small>Reg. Prof: <?php echo htmlspecialchars($cita['registro_profesional'] ?? ''); ?></small>
             </div>
             <div style="width: 250px; text-align: center; padding-top: 5px; font-size: 0.9em;">
                 <br>Sello
