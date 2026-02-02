@@ -28,7 +28,7 @@ class ModeloEps {
     public function contarRegistrosPorBusqueda($termino) {
         $query = "SELECT COUNT(*) as total FROM eps ";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`regimen`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`orden`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -40,7 +40,7 @@ class ModeloEps {
     // Obtener todos los registros
     public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas para evitar inyección SQL
-        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
+        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`regimen`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`orden`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -59,7 +59,7 @@ class ModeloEps {
 
         if (empty($orderSQL)) {
             // Usar ordenamiento predeterminado (hasta 3 niveles)
-            $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`nombre` ASC, `eps`.`codigo` ASC ";
+            $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`orden` ASC, `eps`.`nombre` ASC ";
         }
 
         $query = "SELECT `eps`.*  FROM eps";
@@ -110,6 +110,13 @@ class ModeloEps {
             $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
             $tipos .= 's';
         }
+        // Campo: regimen
+        if (array_key_exists('regimen', $datos)) {
+            $campos[] = '`regimen`';
+            $valores[] = '?';
+            $params[] = ($datos['regimen'] === '' || $datos['regimen'] === null) ? '' : $datos['regimen'];
+            $tipos .= 's';
+        }
         // Campo: nit
         if (array_key_exists('nit', $datos)) {
             $campos[] = '`nit`';
@@ -131,6 +138,13 @@ class ModeloEps {
             $params[] = ($datos['email'] === '' || $datos['email'] === null) ? '' : $datos['email'];
             $tipos .= 's';
         }
+        // Campo: orden
+        if (array_key_exists('orden', $datos)) {
+            $campos[] = '`orden`';
+            $valores[] = '?';
+            $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
+            $tipos .= 'i';
+        }
         // Campo: estado
         if (array_key_exists('estado', $datos)) {
             $campos[] = '`estado`';
@@ -144,13 +158,6 @@ class ModeloEps {
             $valores[] = '?';
             $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
             $tipos .= 'i';
-        }
-        // Campo: fecha_insercion
-        if (array_key_exists('fecha_insercion', $datos)) {
-            $campos[] = '`fecha_insercion`';
-            $valores[] = '?';
-            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
-            $tipos .= 's';
         }
         // Campo: usuario_id_actualizo
         if (array_key_exists('usuario_id_actualizo', $datos)) {
@@ -200,6 +207,12 @@ class ModeloEps {
             $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
             $tipos .= 's';
         }
+        // Campo: regimen
+        if (array_key_exists('regimen', $datos)) {
+            $actualizaciones[] = "`regimen` = ?";
+            $params[] = ($datos['regimen'] === '' || $datos['regimen'] === null) ? '' : $datos['regimen'];
+            $tipos .= 's';
+        }
         // Campo: nit
         if (array_key_exists('nit', $datos)) {
             $actualizaciones[] = "`nit` = ?";
@@ -218,6 +231,12 @@ class ModeloEps {
             $params[] = ($datos['email'] === '' || $datos['email'] === null) ? '' : $datos['email'];
             $tipos .= 's';
         }
+        // Campo: orden
+        if (array_key_exists('orden', $datos)) {
+            $actualizaciones[] = "`orden` = ?";
+            $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
+            $tipos .= 'i';
+        }
         // Campo: estado
         if (array_key_exists('estado', $datos)) {
             $actualizaciones[] = "`estado` = ?";
@@ -229,12 +248,6 @@ class ModeloEps {
             $actualizaciones[] = "`usuario_id_inserto` = ?";
             $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
             $tipos .= 'i';
-        }
-        // Campo: fecha_insercion
-        if (array_key_exists('fecha_insercion', $datos)) {
-            $actualizaciones[] = "`fecha_insercion` = ?";
-            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
-            $tipos .= 's';
         }
         // Campo: usuario_id_actualizo
         if (array_key_exists('usuario_id_actualizo', $datos)) {
@@ -271,7 +284,7 @@ class ModeloEps {
     // Función de búsqueda (reutilizada)
     public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas
-        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
+        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`regimen`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`orden`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -289,12 +302,12 @@ class ModeloEps {
         }
 
         if (empty($orderSQL)) {
-            $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`nombre` ASC, `eps`.`codigo` ASC ";
+            $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`orden` ASC, `eps`.`nombre` ASC ";
         }
 
         $query = "SELECT `eps`.*  FROM eps";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`regimen`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`orden`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -310,9 +323,9 @@ class ModeloEps {
 
     public function contarPorCampo($campo, $valor) {
         // Validar campo
-        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
+        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`regimen`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`orden`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
-        $simpleCols = ['id', 'codigo', 'nombre', 'nit', 'telefono', 'email', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'regimen', 'nit', 'telefono', 'email', 'orden', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -351,8 +364,8 @@ class ModeloEps {
 
     public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validación de campo idéntica a contarPorCampo
-        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
-        $simpleCols = ['id', 'codigo', 'nombre', 'nit', 'telefono', 'email', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`regimen`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`orden`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'regimen', 'nit', 'telefono', 'email', 'orden', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -393,7 +406,7 @@ class ModeloEps {
         }
         
         if (empty($orderSQL)) {
-             $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`nombre` ASC, `eps`.`codigo` ASC ";
+             $orderSQL = " ORDER BY `eps`.`estado` ASC, `eps`.`orden` ASC, `eps`.`nombre` ASC ";
         }
 
         $query = "SELECT `eps`.*  FROM eps";
@@ -412,7 +425,7 @@ class ModeloEps {
     // Funcion de exportar datos
     public function exportarDatos($termino = '', $campoFiltro = '') {
         try {
-            $query = "SELECT `eps`.`codigo`, `eps`.`nombre`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion` FROM eps";
+            $query = "SELECT `eps`.`codigo`, `eps`.`nombre`, `eps`.`regimen`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`orden`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion` FROM eps";
             $query .= " WHERE ";
             
             $usarFiltroCampo = false;
@@ -420,8 +433,8 @@ class ModeloEps {
 
             if (!empty($campoFiltro)) {
                  // Validar campo
-                $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
-                $simpleCols = ['id', 'codigo', 'nombre', 'nit', 'telefono', 'email', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+                $allowedColumns = ['`eps`.`id`', '`eps`.`codigo`', '`eps`.`nombre`', '`eps`.`regimen`', '`eps`.`nit`', '`eps`.`telefono`', '`eps`.`email`', '`eps`.`orden`', '`eps`.`estado`', '`eps`.`usuario_id_inserto`', '`eps`.`fecha_insercion`', '`eps`.`usuario_id_actualizo`', '`eps`.`fecha_actualizacion`'];
+                $simpleCols = ['id', 'codigo', 'nombre', 'regimen', 'nit', 'telefono', 'email', 'orden', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
                 
                 $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
                 
@@ -446,7 +459,7 @@ class ModeloEps {
             if ($usarFiltroCampo) {
                  $query .= $columnaSQL . " LIKE ?";
             } else {
-                $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
+                $query .= "CONCAT_WS(' ', `eps`.`id`, `eps`.`codigo`, `eps`.`nombre`, `eps`.`regimen`, `eps`.`nit`, `eps`.`telefono`, `eps`.`email`, `eps`.`orden`, `eps`.`estado`, `eps`.`usuario_id_inserto`, `eps`.`fecha_insercion`, `eps`.`usuario_id_actualizo`, `eps`.`fecha_actualizacion`) LIKE ?";
             }
 
             if (!$this->conexion) {

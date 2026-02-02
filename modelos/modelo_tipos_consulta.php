@@ -28,7 +28,7 @@ class ModeloTipos_consulta {
     public function contarRegistrosPorBusqueda($termino) {
         $query = "SELECT COUNT(*) as total FROM tipos_consulta ";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`color`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`codigo_cups`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -40,7 +40,7 @@ class ModeloTipos_consulta {
     // Obtener todos los registros
     public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas para evitar inyección SQL
-        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`color`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
+        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`codigo_cups`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -117,11 +117,11 @@ class ModeloTipos_consulta {
             $params[] = ($datos['descripcion'] === '' || $datos['descripcion'] === null) ? '' : $datos['descripcion'];
             $tipos .= 's';
         }
-        // Campo: color
-        if (array_key_exists('color', $datos)) {
-            $campos[] = '`color`';
+        // Campo: codigo_cups
+        if (array_key_exists('codigo_cups', $datos)) {
+            $campos[] = '`codigo_cups`';
             $valores[] = '?';
-            $params[] = ($datos['color'] === '' || $datos['color'] === null) ? '' : $datos['color'];
+            $params[] = ($datos['codigo_cups'] === '' || $datos['codigo_cups'] === null) ? '' : $datos['codigo_cups'];
             $tipos .= 's';
         }
         // Campo: estado
@@ -206,10 +206,10 @@ class ModeloTipos_consulta {
             $params[] = ($datos['descripcion'] === '' || $datos['descripcion'] === null) ? '' : $datos['descripcion'];
             $tipos .= 's';
         }
-        // Campo: color
-        if (array_key_exists('color', $datos)) {
-            $actualizaciones[] = "`color` = ?";
-            $params[] = ($datos['color'] === '' || $datos['color'] === null) ? '' : $datos['color'];
+        // Campo: codigo_cups
+        if (array_key_exists('codigo_cups', $datos)) {
+            $actualizaciones[] = "`codigo_cups` = ?";
+            $params[] = ($datos['codigo_cups'] === '' || $datos['codigo_cups'] === null) ? '' : $datos['codigo_cups'];
             $tipos .= 's';
         }
         // Campo: estado
@@ -271,7 +271,7 @@ class ModeloTipos_consulta {
     // Función de búsqueda (reutilizada)
     public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas
-        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`color`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
+        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`codigo_cups`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -294,7 +294,7 @@ class ModeloTipos_consulta {
 
         $query = "SELECT `tipos_consulta`.*  FROM tipos_consulta";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`color`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`codigo_cups`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -310,9 +310,9 @@ class ModeloTipos_consulta {
 
     public function contarPorCampo($campo, $valor) {
         // Validar campo
-        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`color`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
+        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`codigo_cups`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'codigo_cups', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -351,8 +351,8 @@ class ModeloTipos_consulta {
 
     public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validación de campo idéntica a contarPorCampo
-        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`color`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`codigo_cups`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'codigo_cups', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -412,7 +412,7 @@ class ModeloTipos_consulta {
     // Funcion de exportar datos
     public function exportarDatos($termino = '', $campoFiltro = '') {
         try {
-            $query = "SELECT `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`color`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden` FROM tipos_consulta";
+            $query = "SELECT `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`codigo_cups`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden` FROM tipos_consulta";
             $query .= " WHERE ";
             
             $usarFiltroCampo = false;
@@ -420,8 +420,8 @@ class ModeloTipos_consulta {
 
             if (!empty($campoFiltro)) {
                  // Validar campo
-                $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`color`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
-                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'color', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+                $allowedColumns = ['`tipos_consulta`.`id`', '`tipos_consulta`.`codigo`', '`tipos_consulta`.`nombre`', '`tipos_consulta`.`descripcion`', '`tipos_consulta`.`codigo_cups`', '`tipos_consulta`.`estado`', '`tipos_consulta`.`usuario_id_inserto`', '`tipos_consulta`.`fecha_insercion`', '`tipos_consulta`.`usuario_id_actualizo`', '`tipos_consulta`.`fecha_actualizacion`', '`tipos_consulta`.`orden`'];
+                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'codigo_cups', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
                 
                 $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
                 
@@ -446,7 +446,7 @@ class ModeloTipos_consulta {
             if ($usarFiltroCampo) {
                  $query .= $columnaSQL . " LIKE ?";
             } else {
-                $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`color`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
+                $query .= "CONCAT_WS(' ', `tipos_consulta`.`id`, `tipos_consulta`.`codigo`, `tipos_consulta`.`nombre`, `tipos_consulta`.`descripcion`, `tipos_consulta`.`codigo_cups`, `tipos_consulta`.`estado`, `tipos_consulta`.`usuario_id_inserto`, `tipos_consulta`.`fecha_insercion`, `tipos_consulta`.`usuario_id_actualizo`, `tipos_consulta`.`fecha_actualizacion`, `tipos_consulta`.`orden`) LIKE ?";
             }
 
             if (!$this->conexion) {

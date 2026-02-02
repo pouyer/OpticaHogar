@@ -205,19 +205,19 @@ endif;
                 </div>
             </div>
 
-            <!-- 4. FPC, DP y Oftalmoscopia -->
+            <!-- 4. PPC, DP y Oftalmoscopia -->
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sec4">
-                        4. FPC, DP y Oftalmoscopia
+                        4. PPC, DP y Oftalmoscopia
                     </button>
                 </h2>
                 <div id="sec4" class="accordion-collapse collapse" data-bs-parent="#citaAccordion">
                     <div class="accordion-body section-content">
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label>FPC (Fijación Preferencial de la Conjunta)</label>
-                                <input type="text" name="fpc" class="form-control" placeholder="Ej: Alternante" value="<?= isset($cita) ? htmlspecialchars($cita['fpc'] ?? '') : '' ?>">
+                                <label>PPC (Punto Próximo de Convergencia)</label>
+                                <input type="text" name="ppc" class="form-control" placeholder="Ej: Alternante" value="<?= isset($cita) ? htmlspecialchars($cita['ppc'] ?? '') : '' ?>">
                             </div>
                             <div class="col-md-6">
                                 <label>DP (Distancia Pupilar)</label>
@@ -329,38 +329,28 @@ endif;
                                 </select>
                             </div>
                         </div>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-3 od-bg">
-                                <label class="fw-bold">Esférico OD</label>
-                                <input type="text" name="lentes_esferico_od" class="form-control" placeholder="Ej: -1.50" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_esferico_od'] ?? '') : '' ?>">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-8 od-bg">
+                                <label class="fw-bold small">Esférico/Cilíndrico/Eje OD</label>
+                                <input type="text" name="esferico_Cyl_eje_od" class="form-control form-control-sm" placeholder="Ej: -1.50 -0.50 x 180" value="<?= isset($cita) ? htmlspecialchars($cita['esferico_Cyl_eje_od'] ?? '') : '' ?>">
                             </div>
-                            <div class="col-md-3 oi-bg">
-                                <label class="fw-bold">Esférico OI</label>
-                                <input type="text" name="lentes_esferico_oi" class="form-control" placeholder="Ej: -1.50" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_esferico_oi'] ?? '') : '' ?>">
+                            <div class="col-md-4 od-bg">
+                                <label class="fw-bold small">Adición OD</label>
+                                <input type="text" name="lentes_adicion_od" class="form-control form-control-sm" placeholder="Add" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_adicion_od'] ?? '') : '' ?>">
                             </div>
-                            <div class="col-md-3 od-bg">
-                                <label class="fw-bold">Cilíndrico OD</label>
-                                <input type="text" name="lentes_cilindrico_od" class="form-control" placeholder="Ej: -0.50" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_cilindrico_od'] ?? '') : '' ?>">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-8 oi-bg">
+                                <label class="fw-bold small">Esférico/Cilíndrico/Eje OI</label>
+                                <input type="text" name="esferico_Cyl_eje_oi" class="form-control form-control-sm" placeholder="Ej: -1.50 -0.50 x 180" value="<?= isset($cita) ? htmlspecialchars($cita['esferico_Cyl_eje_oi'] ?? '') : '' ?>">
                             </div>
-                            <div class="col-md-3 oi-bg">
-                                <label class="fw-bold">Cilíndrico OI</label>
-                                <input type="text" name="lentes_cilindrico_oi" class="form-control" placeholder="Ej: -0.50" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_cilindrico_oi'] ?? '') : '' ?>">
+                            <div class="col-md-4 oi-bg">
+                                <label class="fw-bold small">Adición OI</label>
+                                <input type="text" name="lentes_adicion_oi" class="form-control form-control-sm" placeholder="Add" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_adicion_oi'] ?? '') : '' ?>">
                             </div>
                         </div>
                         <div class="row g-3 mb-3">
-                            <div class="col-md-3 od-bg">
-                                <label class="fw-bold">Eje OD</label>
-                                <input type="text" name="lentes_eje_od" class="form-control" placeholder="Ej: 180" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_eje_od'] ?? '') : '' ?>">
-                            </div>
-                            <div class="col-md-3 oi-bg">
-                                <label class="fw-bold">Eje OI</label>
-                                <input type="text" name="lentes_eje_oi" class="form-control" placeholder="Ej: 180" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_eje_oi'] ?? '') : '' ?>">
-                            </div>
-                            <div class="col-md-3">
-                                <label>Adición</label>
-                                <input type="text" name="lentes_adicion" class="form-control" placeholder="Ej: +2.00" value="<?= isset($cita) ? htmlspecialchars($cita['lentes_adicion'] ?? '') : '' ?>">
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label>Uso de Lentes</label>
                                 <select name="uso_lentes_id" class="form-select">
                                     <option value="">Seleccione...</option>
@@ -417,26 +407,29 @@ endif;
                         </div>
                         <h5 class="mb-3">Diagnóstico</h5>
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label>Buscar Diagnóstico CIE-10</label>
-                                <input type="text" id="buscar_cie10" class="form-control" placeholder="Código o descripción..." autocomplete="off" value="<?= isset($cita) && isset($cita['cie10_id']) ? 'Cargando...' : '' ?>">
+                            <div class="col-md-12">
+                                <label class="fw-bold">Búsqueda Diagnóstico CIE-10 (Principal)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="icon-search-1"></i></span>
+                                    <input type="text" id="buscar_cie10" class="form-control form-control-lg" placeholder="Escriba código o nombre del diagnóstico..." autocomplete="off" value="<?= isset($cita) && isset($cita['cie10_id']) ? 'Cargando...' : '' ?>">
+                                </div>
                                 <div id="sugerencias_cie10" class="list-group position-absolute w-100 mt-1" style="z-index:1000; max-height:300px; overflow-y:auto; display:none;"></div>
                                 <input type="hidden" name="cie10_id" id="cie10_id" value="<?= isset($cita) ? ($cita['cie10_id'] ?? '') : '' ?>">
                                 <div id="info_cie10" class="mt-2" style="<?= (isset($cita) && isset($cita['cie10_id']) && $cita['cie10_id']) ? 'display:block;' : 'display:none;' ?>">
                                     <div class="alert alert-info py-2 mb-0">
-                                        <small id="cie10_seleccionado"><?= isset($cita) && isset($cita['cie10_id']) ? 'Cargando diagnóstico...' : '' ?></small>
+                                        <i class="icon-info-circled me-1"></i> <small id="cie10_seleccionado"><?= isset($cita) && isset($cita['cie10_id']) ? 'Cargando diagnóstico...' : '' ?></small>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label>Diagnóstico Principal</label>
-                                <input type="text" name="diagnostico_principal" class="form-control" placeholder="Diagnóstico principal..." value="<?= isset($cita) ? htmlspecialchars($cita['diagnostico_principal'] ?? '') : '' ?>">
-                            </div>
                         </div>
                         <div class="row g-3 mb-4">
-                            <div class="col-md-12">
-                                <label>Diagnóstico Secundario</label>
-                                <input type="text" name="diagnostico_secundario" class="form-control" placeholder="Diagnóstico secundario..." value="<?= isset($cita) ? htmlspecialchars($cita['diagnostico_secundario'] ?? '') : '' ?>">
+                            <div class="col-md-6">
+                                <label>Ampliación Diag. Principal</label>
+                                <input type="text" name="diagnostico_principal" class="form-control" placeholder="Detalles adicionales..." value="<?= isset($cita) ? htmlspecialchars($cita['diagnostico_principal'] ?? '') : '' ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Diagnóstico Secundario / Otros</label>
+                                <input type="text" name="diagnostico_secundario" class="form-control" placeholder="Otros diagnósticos..." value="<?= isset($cita) ? htmlspecialchars($cita['diagnostico_secundario'] ?? '') : '' ?>">
                             </div>
                         </div>
                         <h5 class="mb-3">Tratamiento</h5>
@@ -516,16 +509,23 @@ endif;
 
         <div class="text-center mt-5">
             <?php if (isset($cita)): ?>
-                <input type="hidden" name="id" value="<?= $cita['id'] ?>">
+                <input type="hidden" name="id" id="cita_id" value="<?= $cita['id'] ?>">
                 <a href="?action=listar" class="btn btn-secondary btn-lg px-4 me-2">Regresar</a>
+            <?php else: ?>
+                <input type="hidden" name="id" id="cita_id" value="">
             <?php endif; ?>
-            <?php if (!isset($cita) || (isset($cita) && $cita['estado_cita_id'] != 2)): ?>
-                <button type="submit" class="btn btn-primary btn-lg px-5"><?= isset($cita) ? 'Actualizar' : 'Guardar' ?> Control Optométrico</button>
+            
+            <?php if (!isset($cita) || (isset($cita) && (!isset($cita['bloquea_registro']) || $cita['bloquea_registro'] == 0))): ?>
+                <button type="submit" class="btn btn-primary btn-lg px-5" id="btn-save-main"><?= isset($cita) ? 'Actualizar' : 'Guardar' ?> Control Optométrico</button>
             <?php else: ?>
                 <div class="alert alert-warning d-inline-block px-5">
-                    <strong>Cita Finalizada:</strong> Los controles realizados no pueden ser modificados.
+                    <strong>Consulta Finalizada:</strong> Los controles realizados se encuentran en un estado que no permite modificaciones.
                 </div>
             <?php endif; ?>
+
+            <div id="autosave-status" class="text-muted small mt-2" style="display:none;">
+                <i class="bi bi-cloud-check"></i> Último autoguardado: <span id="autosave-time">--:--:--</span>
+            </div>
         </div>
     </form>
 </div>
@@ -706,8 +706,8 @@ document.addEventListener('click', e => {
         }
     });
 
-    // Deshabilitar formulario si la cita está realizada
-    <?php if (isset($cita) && $cita['estado_cita_id'] == 2): ?>
+    // Deshabilitar formulario si la cita está bloqueada por su estado
+    <?php if (isset($cita) && isset($cita['bloquea_registro']) && $cita['bloquea_registro'] == 1): ?>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         if (form) {
@@ -756,6 +756,71 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => console.error('Error validando restricciones:', err));
 });
 <?php endif; ?>
+
+// Lógica de Autoguardado
+document.addEventListener('DOMContentLoaded', function() {
+    const formCita = document.querySelector('form');
+    const pacienteIdInput = document.getElementById('paciente_id');
+    const citaIdInput = document.getElementById('cita_id');
+    const autosaveStatus = document.getElementById('autosave-status');
+    const autosaveTime = document.getElementById('autosave-time');
+    
+    // Solo si estamos en modo creación o edición de cita activa
+    <?php if (!isset($cita) || (isset($cita) && (isset($cita['bloquea_registro']) && $cita['bloquea_registro'] == 0))): ?>
+    
+    const ejecutarAutoguardado = () => {
+        const pId = pacienteIdInput.value;
+        if (!pId) return; // No autoguardar si no hay paciente seleccionado
+
+        // Evitar autoguardado si estamos enviando el formulario manualmente
+        if (formCita.dataset.submitting === 'true') return;
+
+        const formData = new FormData(formCita);
+        
+        // El ID puede venir del input oculto
+        if (citaIdInput.value) {
+            formData.set('id', citaIdInput.value);
+        }
+
+        fetch('../controladores/controlador_cita.php?action=autoguardar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && result.id) {
+                // Si se creó una cita nueva, guardamos el ID para las siguientes
+                if (!citaIdInput.value) {
+                    citaIdInput.value = result.id;
+                    // Actualizar URL sin recargar para reflejar que estamos en edición
+                    const newUrl = window.location.pathname + '?action=editar&id=' + result.id;
+                    window.history.replaceState({path: newUrl}, '', newUrl);
+                }
+                
+                // Mostrar estatus
+                if (autosaveStatus && autosaveTime) {
+                    autosaveStatus.style.display = 'block';
+                    autosaveTime.textContent = result.timestamp;
+                }
+            }
+        })
+        .catch(error => console.error('Error en autoguardado:', error));
+    };
+
+    // Marcar cuando el usuario envía el formulario manualmente
+    formCita.addEventListener('submit', () => {
+        formCita.dataset.submitting = 'true';
+    });
+
+    // Iniciar intervalo de autoguardado (por ejemplo cada 1 minuto)
+    const intervaloMinutos = 1; 
+    setInterval(ejecutarAutoguardado, intervaloMinutos * 60000);
+
+    // Opcional: También autoguardar al perder el foco en campos importantes
+    // formCita.addEventListener('change', ejecutarAutoguardado);
+
+    <?php endif; ?>
+});
 </script>
 </body>
 </html>

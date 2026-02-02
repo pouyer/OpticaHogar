@@ -22,8 +22,8 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
     <link rel="stylesheet" href="../css/estilos.css">
     <style>
         :root {
-            --primary-color: #32c8c8;
-            --primary-gradient: linear-gradient(135deg, #32c8c8 0%, #2a5298 100%);
+            --primary-color: #8c288c;
+            --primary-gradient: linear-gradient(135deg, #8c288c 0%, #2a5298 100%);
             --accent-color: #ff9800;
         }
         body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
@@ -117,6 +117,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_paciente`.`visible`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        visible                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_paciente`.`visible`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_paciente`.`estado`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         estado                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_paciente`.`estado`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
@@ -164,6 +169,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     <td><?php echo htmlspecialchars($registro['nombre']); ?></td>
                     <td><?php echo htmlspecialchars($registro['descripcion']); ?></td>
                     <td><?php echo htmlspecialchars($registro['orden']); ?></td>
+                    <td><?php $isChecked = ($registro['visible'] == 1 || $registro['visible'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
@@ -174,6 +180,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-nombre="<?php echo htmlspecialchars($registro['nombre']); ?>"
                            data-descripcion="<?php echo htmlspecialchars($registro['descripcion']); ?>"
                            data-orden="<?php echo htmlspecialchars($registro['orden']); ?>"
+                           data-visible="<?php echo htmlspecialchars($registro['visible']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
                            data-fecha_insercion="<?php echo htmlspecialchars($registro['fecha_insercion']); ?>"
@@ -189,7 +196,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                 </tr>
                 <?php endforeach; else: ?>
-                                <tr><td colspan="6">No hay registros disponibles.</td></tr>
+                                <tr><td colspan="7">No hay registros disponibles.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -251,6 +258,14 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                     <input type="number" class="form-control" id="orden" name="orden">
                                 </div>
                             </div>                            <div class="row">                                <div class="col-md-6 mb-3">
+                                    <label for="visible">visible:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="visible" value="0">
+                                        <input class="form-check-input" type="checkbox" id="visible" name="visible" value="1">
+                                        <label class="form-check-label" for="visible">Si/No</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label for="estado">estado:</label>
                                     <div class="form-check form-switch">
                                         <input type="hidden" name="estado" value="inactivo">
@@ -309,6 +324,14 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                      <input type="number" class="form-control" id="orden" name="orden">
                                 </div>
                             </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
+                                     <label for="visible">visible:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="visible" value="0">
+                                        <input class="form-check-input" type="checkbox" id="visible" name="visible" value="1">
+                                        <label class="form-check-label" for="visible">Si/No</label>
+                                    </div>
+                                </div>
+                                 <div class="col-md-6 mb-3">
                                      <label for="estado">estado:</label>
                                     <div class="form-check form-switch">
                                         <input type="hidden" name="estado" value="inactivo">
@@ -423,6 +446,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputorden.checked = (valororden === 'activo');
                     } else {
                         inputorden.value = valororden;
+                    }
+                }
+                var valorvisible = button.getAttribute('data-visible');
+                var inputvisible = modal.querySelector('#visible');
+                if(inputvisible) {
+                    if (inputvisible.type === 'checkbox') {
+                        inputvisible.checked = (valorvisible == '1' || valorvisible == 'true');
+                    } else {
+                        inputvisible.value = valorvisible;
                     }
                 }
                 var valorestado = button.getAttribute('data-estado');

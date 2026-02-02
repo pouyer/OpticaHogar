@@ -22,8 +22,8 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
     <link rel="stylesheet" href="../css/estilos.css">
     <style>
         :root {
-            --primary-color: #32c8c8;
-            --primary-gradient: linear-gradient(135deg, #32c8c8 0%, #2a5298 100%);
+            --primary-color: #8c288c;
+            --primary-gradient: linear-gradient(135deg, #8c288c 0%, #2a5298 100%);
             --accent-color: #ff9800;
         }
         body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
@@ -107,6 +107,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`eps`.`regimen`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        regimen                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`eps`.`regimen`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`eps`.`nit`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         nit                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`eps`.`nit`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
@@ -119,6 +124,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`eps`.`email`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         email                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`eps`.`email`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`eps`.`orden`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        orden                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`eps`.`orden`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
@@ -167,9 +177,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                 <tr>
                     <td><?php echo htmlspecialchars($registro['codigo']); ?></td>
                     <td><?php echo htmlspecialchars($registro['nombre']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['regimen']); ?></td>
                     <td><?php echo htmlspecialchars($registro['nit']); ?></td>
                     <td><?php echo htmlspecialchars($registro['telefono']); ?></td>
                     <td><?php echo htmlspecialchars($registro['email']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['orden']); ?></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
@@ -178,9 +190,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-id="<?php echo htmlspecialchars($registro['id']); ?>"
                            data-codigo="<?php echo htmlspecialchars($registro['codigo']); ?>"
                            data-nombre="<?php echo htmlspecialchars($registro['nombre']); ?>"
+                           data-regimen="<?php echo htmlspecialchars($registro['regimen']); ?>"
                            data-nit="<?php echo htmlspecialchars($registro['nit']); ?>"
                            data-telefono="<?php echo htmlspecialchars($registro['telefono']); ?>"
                            data-email="<?php echo htmlspecialchars($registro['email']); ?>"
+                           data-orden="<?php echo htmlspecialchars($registro['orden']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
                            data-fecha_insercion="<?php echo htmlspecialchars($registro['fecha_insercion']); ?>"
@@ -196,7 +210,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                 </tr>
                 <?php endforeach; else: ?>
-                                <tr><td colspan="7">No hay registros disponibles.</td></tr>
+                                <tr><td colspan="9">No hay registros disponibles.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -250,16 +264,24 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                     <input type="text" class="form-control" id="nombre" name="nombre" required>
                                 </div>
                             </div>                            <div class="row">                                <div class="col-md-6 mb-3">
+                                    <label for="regimen">regimen:</label>
+                                    <input type="text" class="form-control" id="regimen" name="regimen">
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label for="nit">nit:</label>
                                     <input type="text" class="form-control" id="nit" name="nit">
                                 </div>
-                                <div class="col-md-6 mb-3">
+                            </div>                            <div class="row">                                <div class="col-md-6 mb-3">
                                     <label for="telefono">telefono:</label>
                                     <input type="text" class="form-control" id="telefono" name="telefono">
                                 </div>
-                            </div>                            <div class="row">                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6 mb-3">
                                     <label for="email">email:</label>
                                     <input type="text" class="form-control" id="email" name="email">
+                                </div>
+                            </div>                            <div class="row">                                <div class="col-md-6 mb-3">
+                                    <label for="orden">orden:</label>
+                                    <input type="number" class="form-control" id="orden" name="orden">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="estado">estado:</label>
@@ -312,16 +334,24 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                      <input type="text" class="form-control" id="nombre" name="nombre" required>
                                 </div>
                             </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
+                                     <label for="regimen">regimen:</label>
+                                     <input type="text" class="form-control" id="regimen" name="regimen">
+                                </div>
+                                 <div class="col-md-6 mb-3">
                                      <label for="nit">nit:</label>
                                      <input type="text" class="form-control" id="nit" name="nit">
                                 </div>
-                                 <div class="col-md-6 mb-3">
+                            </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
                                      <label for="telefono">telefono:</label>
                                      <input type="text" class="form-control" id="telefono" name="telefono">
                                 </div>
-                            </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
+                                 <div class="col-md-6 mb-3">
                                      <label for="email">email:</label>
                                      <input type="text" class="form-control" id="email" name="email">
+                                </div>
+                            </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
+                                     <label for="orden">orden:</label>
+                                     <input type="number" class="form-control" id="orden" name="orden">
                                 </div>
                                  <div class="col-md-6 mb-3">
                                      <label for="estado">estado:</label>
@@ -422,6 +452,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputnombre.value = valornombre;
                     }
                 }
+                var valorregimen = button.getAttribute('data-regimen');
+                var inputregimen = modal.querySelector('#regimen');
+                if(inputregimen) {
+                    if (inputregimen.type === 'checkbox') {
+                        inputregimen.checked = (valorregimen === 'activo');
+                    } else {
+                        inputregimen.value = valorregimen;
+                    }
+                }
                 var valornit = button.getAttribute('data-nit');
                 var inputnit = modal.querySelector('#nit');
                 if(inputnit) {
@@ -447,6 +486,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputemail.checked = (valoremail === 'activo');
                     } else {
                         inputemail.value = valoremail;
+                    }
+                }
+                var valororden = button.getAttribute('data-orden');
+                var inputorden = modal.querySelector('#orden');
+                if(inputorden) {
+                    if (inputorden.type === 'checkbox') {
+                        inputorden.checked = (valororden === 'activo');
+                    } else {
+                        inputorden.value = valororden;
                     }
                 }
                 var valorestado = button.getAttribute('data-estado');

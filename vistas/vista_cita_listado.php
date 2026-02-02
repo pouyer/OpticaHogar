@@ -7,6 +7,7 @@ require_once '../accesos/verificar_sesion.php';
 // Cargar permisos
 $mi_programa = 'vista_cita_listado.php';
 $permisos = $_SESSION['permisos'][$mi_programa] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
+$permisos_formula = $_SESSION['permisos']['vista_formula_reporte.php'] ?? null;
 
 $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
 $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
@@ -190,6 +191,11 @@ if (!isset($registros) || !isset($totalRegistros)) {
                                             <button class="btn btn-sm btn-outline-danger" onclick="eliminar(<?= $cita['id'] ?>)">
                                                 <i class="icon-trash-2"></i>
                                             </button>
+                                            <?php endif; ?>
+                                            <?php if ($permisos_formula && isset($cita['mostrar_en_hc']) && $cita['mostrar_en_hc']): ?>
+                                            <a href="../controladores/controlador_formula_medica.php?action=ver&id=<?= $cita['id'] ?>" class="btn btn-sm btn-outline-success" target="_blank" title="Ver Fórmula Médica">
+                                                <i class="icon-doc-text"></i>
+                                            </a>
                                             <?php endif; ?>
                                         </div>
                                     </td>

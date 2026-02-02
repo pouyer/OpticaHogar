@@ -147,7 +147,7 @@ class ModeloCita {
     }
 
     public function getTiposLentes() {
-        $sql = "SELECT id, nombre FROM tipos_lentes WHERE estado = 'activo' ORDER BY nombre";
+        $sql = "SELECT id, nombre FROM tipos_lentes WHERE estado = 'activo' ORDER BY orden, nombre";
         $resultado = $this->conexion->query($sql);
         $tipos = [];
         if ($resultado) {
@@ -161,7 +161,7 @@ class ModeloCita {
     }
 
     public function getMaterialesLentes() {
-        $sql = "SELECT id, nombre FROM materiales_lentes WHERE estado = 'activo' ORDER BY nombre";
+        $sql = "SELECT id, nombre FROM materiales_lentes WHERE estado = 'activo' ORDER BY orden, nombre";
         $resultado = $this->conexion->query($sql);
         $materiales = [];
         if ($resultado) {
@@ -175,7 +175,7 @@ class ModeloCita {
     }
 
     public function getUsosLentes() {
-        $sql = "SELECT id, nombre FROM usos_lentes WHERE estado = 'activo' ORDER BY nombre";
+        $sql = "SELECT id, nombre FROM usos_lentes WHERE estado = 'activo' ORDER BY orden, nombre";
         $resultado = $this->conexion->query($sql);
         $usos = [];
         if ($resultado) {
@@ -203,7 +203,7 @@ class ModeloCita {
     }
 
     public function getEstadosCita() {
-        $sql = "SELECT id, nombre, color FROM estados_cita WHERE estado = 'activo' ORDER BY orden , nombre";
+        $sql = "SELECT id, nombre, color, bloquea_registro FROM estados_cita WHERE estado = 'activo' ORDER BY orden , nombre";
         $resultado = $this->conexion->query($sql);
         $estados = [];
         if ($resultado) {
@@ -282,11 +282,10 @@ class ModeloCita {
             'motivo_consulta', 'av_sc_lejos_od', 'av_sc_lejos_oi', 'av_sc_cerca_od', 'av_sc_cerca_oi',
             'av_cc_lejos_od', 'av_cc_lejos_oi', 'av_cc_cerca_od', 'av_cc_cerca_oi',
             'examen_externo_od', 'examen_externo_oi', 'cover_test_vp', 'cover_test_vl',
-            'fpc', 'dp', 'oftalmoscopia_od', 'oftalmoscopia_oi',
+            'ppc', 'dp', 'oftalmoscopia_od', 'oftalmoscopia_oi',
             'queratometria_od', 'queratometria_oi', 'retinoscopia_od', 'retinoscopia_oi',
             'subjetivo_od', 'subjetivo_oi', 'resultado_final_od', 'resultado_final_oi',
-            'lentes_esferico_od', 'lentes_esferico_oi', 'lentes_cilindrico_od', 'lentes_cilindrico_oi',
-            'lentes_eje_od', 'lentes_eje_oi', 'lentes_adicion', 'lentes_tratamientos',
+            'esferico_Cyl_eje_od', 'esferico_Cyl_eje_oi', 'lentes_adicion_od', 'lentes_adicion_oi', 'lentes_tratamientos',
             'filtro_color', 'proximo_control', 'proximo_control_motivo', 'origen_enfermedad',
             'fecha_inicio_sintomas', 'diagnostico_principal', 'diagnostico_secundario',
             'tratamiento', 'medicamentos_prescritos', 'recomendaciones',
@@ -355,10 +354,13 @@ class ModeloCita {
                        f_anos(p.fecha_nacimiento) AS paciente_edad,
                        CONCAT(ps.primer_nombre, ' ', COALESCE(ps.segundo_nombre,''), ' ', ps.primer_apellido, ' ', COALESCE(ps.segundo_apellido,'')) AS profesional_nombre,
                        d.codigo AS cie10_codigo,
-                       d.descripcion AS cie10_descripcion
+                       d.descripcion AS cie10_descripcion,
+                       e.bloquea_registro,
+                       e.mostrar_en_hc
                 FROM citas_control cc
                 JOIN pacientes p ON cc.paciente_id = p.id
                 JOIN profesionales_salud ps ON cc.profesional_id = ps.id
+                JOIN estados_cita e ON cc.estado_cita_id = e.id
                 LEFT JOIN diagnosticos_cie10 d ON cc.cie10_id = d.id
                 WHERE cc.id = ?";
         $stmt = $this->conexion->prepare($sql);
@@ -394,7 +396,8 @@ class ModeloCita {
                        CONCAT(ps.primer_nombre, ' ', COALESCE(ps.segundo_nombre,''), ' ', ps.primer_apellido, ' ', COALESCE(ps.segundo_apellido,'')) AS profesional_nombre,
                        tc.nombre AS tipo_consulta_nombre,
                        ec.nombre AS estado_cita_nombre,
-                       ec.color AS estado_cita_color
+                       ec.color AS estado_cita_color,
+                       ec.mostrar_en_hc AS mostrar_en_hc
                 FROM citas_control cc
                 JOIN pacientes p ON cc.paciente_id = p.id
                 JOIN profesionales_salud ps ON cc.profesional_id = ps.id
@@ -470,7 +473,8 @@ class ModeloCita {
                        CONCAT(ps.primer_nombre, ' ', COALESCE(ps.segundo_nombre,''), ' ', ps.primer_apellido, ' ', COALESCE(ps.segundo_apellido,'')) AS profesional_nombre,
                        tc.nombre AS tipo_consulta_nombre,
                        ec.nombre AS estado_cita_nombre,
-                       ec.color AS estado_cita_color
+                       ec.color AS estado_cita_color,
+                       ec.mostrar_en_hc AS mostrar_en_hc
                 FROM citas_control cc
                 JOIN pacientes p ON cc.paciente_id = p.id
                 JOIN profesionales_salud ps ON cc.profesional_id = ps.id
@@ -544,11 +548,10 @@ class ModeloCita {
             'motivo_consulta', 'av_sc_lejos_od', 'av_sc_lejos_oi', 'av_sc_cerca_od', 'av_sc_cerca_oi',
             'av_cc_lejos_od', 'av_cc_lejos_oi', 'av_cc_cerca_od', 'av_cc_cerca_oi',
             'examen_externo_od', 'examen_externo_oi', 'cover_test_vp', 'cover_test_vl',
-            'fpc', 'dp', 'oftalmoscopia_od', 'oftalmoscopia_oi',
+            'ppc', 'dp', 'oftalmoscopia_od', 'oftalmoscopia_oi',
             'queratometria_od', 'queratometria_oi', 'retinoscopia_od', 'retinoscopia_oi',
             'subjetivo_od', 'subjetivo_oi', 'resultado_final_od', 'resultado_final_oi',
-            'lentes_esferico_od', 'lentes_esferico_oi', 'lentes_cilindrico_od', 'lentes_cilindrico_oi',
-            'lentes_eje_od', 'lentes_eje_oi', 'lentes_adicion', 'lentes_tratamientos',
+            'esferico_Cyl_eje_od', 'esferico_Cyl_eje_oi', 'lentes_adicion_od', 'lentes_adicion_oi', 'lentes_tratamientos',
             'filtro_color', 'proximo_control', 'proximo_control_motivo', 'origen_enfermedad',
             'fecha_inicio_sintomas', 'diagnostico_principal', 'diagnostico_secundario',
             'tratamiento', 'medicamentos_prescritos', 'recomendaciones',

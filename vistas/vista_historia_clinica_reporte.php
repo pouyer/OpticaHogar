@@ -575,25 +575,20 @@
                                 <table class="data-table-mini">
                                     <tr>
                                         <th>Ojo</th>
-                                        <th>Esférico</th>
-                                        <th>Cilíndrico</th>
-                                        <th>Eje</th>
+                                        <th>Esférico / Cilíndrico / Eje</th>
                                         <th>Adición</th>
                                         <th>AV Final</th>
                                     </tr>
                                     <tr>
                                         <td>Derecho</td>
-                                        <td><?php echo $cita['lentes_esferico_od'] ?: '-'; ?></td>
-                                        <td><?php echo $cita['lentes_cilindrico_od'] ?: '-'; ?></td>
-                                        <td><?php echo $cita['lentes_eje_od'] ?: '-'; ?></td>
-                                        <td rowspan="2" style="vertical-align: middle;"><?php echo $cita['lentes_adicion'] ?: '-'; ?></td>
+                                        <td><?php echo $cita['esferico_Cyl_eje_od'] ?: '-'; ?></td>
+                                        <td><?php echo $cita['lentes_adicion_od'] ?: '-'; ?></td>
                                         <td><?php echo $cita['resultado_final_od'] ?: '-'; ?></td>
                                     </tr>
                                     <tr>
                                         <td>Izquierdo</td>
-                                        <td><?php echo $cita['lentes_esferico_oi'] ?: '-'; ?></td>
-                                        <td><?php echo $cita['lentes_cilindrico_oi'] ?: '-'; ?></td>
-                                        <td><?php echo $cita['lentes_eje_oi'] ?: '-'; ?></td>
+                                        <td><?php echo $cita['esferico_Cyl_eje_oi'] ?: '-'; ?></td>
+                                        <td><?php echo $cita['lentes_adicion_oi'] ?: '-'; ?></td>
                                         <td><?php echo $cita['resultado_final_oi'] ?: '-'; ?></td>
                                     </tr>
                                 </table>
@@ -610,7 +605,7 @@
                                         <div class="findings-value">
                                             <p style="margin-bottom: 5px;"><small><strong>Ext:</strong> <?php echo ($cita['examen_externo_od'] ?: '-') . ' / ' . ($cita['examen_externo_oi'] ?: '-'); ?></small></p>
                                             <p style="margin-bottom: 5px;"><small><strong>Oft:</strong> <?php echo ($cita['oftalmoscopia_od'] ?: '-') . ' / ' . ($cita['oftalmoscopia_oi'] ?: '-'); ?></small></p>
-                                            <p style="margin-bottom: 0;"><small><strong>Motor:</strong> VP: <?php echo $cita['cover_test_vp'] ?: '-'; ?> / VL: <?php echo $cita['cover_test_vl'] ?: '-'; ?></small></p>
+                                            <p style="margin-bottom: 0;"><small><strong>Motor:</strong> PPC: <?php echo $cita['ppc'] ?: '-'; ?> / VL: <?php echo $cita['cover_test_vl'] ?: '-'; ?></small></p>
                                         </div>
                                     </div>
                                     <div>
@@ -637,7 +632,7 @@
                                     <div>
                                         <span class="findings-label">Pruebas Motoras y DP:</span>
                                         <div class="findings-value">
-                                            <small><strong>FPC:</strong> <?php echo $cita['fpc'] ?: '-'; ?> | <strong>DP:</strong> <?php echo $cita['dp'] ?: '-'; ?></small>
+                                            <small><strong>PPC:</strong> <?php echo $cita['ppc'] ?: '-'; ?> | <strong>DP:</strong> <?php echo $cita['dp'] ?: '-'; ?></small>
                                         </div>
                                     </div>
                                     <?php if($cita['queratometria_od'] || $cita['queratometria_oi']): ?>

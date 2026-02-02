@@ -73,9 +73,65 @@ body {
 #headerContent {
     flex: 1;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    /* Alinea contenido a la derecha */
     align-items: center;
     padding-left: 20px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.user-info .gap-2 {
+    margin-left: auto;
+    /* Empuja los botones a la derecha */
+    display: flex;
+    align-items: center;
+}
+
+/* Estilos para botones del encabezado (solo icono por defecto) */
+.user-info .gap-2 .btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px !important;
+    height: 38px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 42px !important;
+    /* Ajustado para ser más estricto */
+    white-space: nowrap;
+    border-radius: 8px;
+}
+
+.user-info .gap-2 .btn:hover {
+    max-width: 250px !important;
+    padding-right: 15px !important;
+}
+
+.user-info .btn-text {
+    opacity: 0;
+    max-width: 0;
+    display: inline-block;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.user-info .gap-2 .btn:hover .btn-text {
+    opacity: 1;
+    max-width: 200px;
+    margin-left: 8px;
+}
+
+.user-info .gap-2 .btn i {
+    font-size: 1.2rem;
+    margin: 0 !important;
+    flex-shrink: 0;
 }
 
 .welcome-text {
@@ -229,6 +285,15 @@ iframe {
 
     #sidebarToggle {
         display: block !important;
+    }
+
+    /* En móvil, permitir que crezcan si es necesario o mantenerlos compactos */
+    .user-info .btn {
+        max-width: 45px;
+    }
+
+    .user-info .btn:active {
+        max-width: 300px;
     }
 
     #mainSidebar {

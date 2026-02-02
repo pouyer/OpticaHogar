@@ -79,9 +79,9 @@ class ControladorPacientes {
     }
 
     // Método para obtener todos los registros
-    public function obtenerTodos($registrosPorPagina, $pagina, $orderBy = null, $orderDir = 'DESC') {
+    public function obtenerTodos($registrosPorPagina, $pagina, $orderBy = null, $orderDir = 'DESC', $verTodos = false) {
         $offset = ($pagina - 1) * $registrosPorPagina;
-        return $this->modelo->obtenerTodos($registrosPorPagina, $offset, $orderBy, $orderDir);
+        return $this->modelo->obtenerTodos($registrosPorPagina, $offset, $orderBy, $orderDir, $verTodos);
     }
 
     // Método para obtener un registro por ID
@@ -90,21 +90,21 @@ class ControladorPacientes {
     }
 
     // Método para buscar registros
-    public function buscar($termino, $registrosPorPagina, $offset) {
-        return $this->modelo->buscar($termino, $registrosPorPagina, $offset);
+    public function buscar($termino, $registrosPorPagina, $offset, $verTodos = false) {
+        return $this->modelo->buscar($termino, $registrosPorPagina, $offset, null, 'DESC', $verTodos);
     }
 
     // Método para contar registros encontrados en la busqueda
-    public function contarRegistrosPorBusqueda($termino) {
-         return $this->modelo->contarRegistrosPorBusqueda($termino);
+    public function contarRegistrosPorBusqueda($termino, $verTodos = false) {
+         return $this->modelo->contarRegistrosPorBusqueda($termino, $verTodos);
     }
 
-    public function contarPorCampo($campo, $valor) {
-        return $this->modelo->contarPorCampo($campo, $valor);
+    public function contarPorCampo($campo, $valor, $verTodos = false) {
+        return $this->modelo->contarPorCampo($campo, $valor, $verTodos);
     }
 
-    public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset) {
-        return $this->modelo->buscarPorCampo($campo, $valor, $registrosPorPagina, $offset);
+    public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $verTodos = false) {
+        return $this->modelo->buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, null, 'DESC', $verTodos);
     }
 
     // funcion exportar en formatos Exel, CSV, TXT
@@ -113,6 +113,7 @@ class ControladorPacientes {
         try {
             $termino = $_GET['busqueda'] ?? '';
             $campo = $_GET['campo'] ?? '';
+            $verTodos = (isset($_GET['verTodos']) && $_GET['verTodos'] == '1');
             
             $logMsg = "Exportación a formato: $formato";
             if ($campo && $termino) {
@@ -120,10 +121,11 @@ class ControladorPacientes {
             } elseif ($termino) {
                 $logMsg .= " (Búsqueda general: $termino)";
             }
+            if ($verTodos) $logMsg .= " (Ver todos los estados)";
             
             $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'EXPORT', 'pacientes', $logMsg);
             
-            $datos = $this->modelo->exportarDatos($termino, $campo);
+            $datos = $this->modelo->exportarDatos($termino, $campo, $verTodos);
             if ($datos === false) {
                 throw new Exception('Error al obtener los datos para exportar');
             }
@@ -266,12 +268,14 @@ switch ($accion) {
         $paginaActual = $_GET['pagina'] ?? 1;
         $offset = ($paginaActual - 1) * $registrosPorPagina;
         
+        $verTodos = (isset($_GET['verTodos']) && $_GET['verTodos'] == '1');
+        
         if (!empty($campoFiltro) && !empty($termino)) {
-            $totalRegistros = $controlador->contarPorCampo($campoFiltro, $termino);
-            $resultado = $controlador->buscarPorCampo($campoFiltro, $termino, $registrosPorPagina, $offset);
+            $totalRegistros = $controlador->contarPorCampo($campoFiltro, $termino, $verTodos);
+            $resultado = $controlador->buscarPorCampo($campoFiltro, $termino, $registrosPorPagina, $offset, $verTodos);
         } else {
-            $totalRegistros = $controlador->contarRegistrosPorBusqueda($termino);
-            $resultado = $controlador->buscar($termino, $registrosPorPagina, $offset);
+            $totalRegistros = $controlador->contarRegistrosPorBusqueda($termino, $verTodos);
+            $resultado = $controlador->buscar($termino, $registrosPorPagina, $offset, $verTodos);
         }
         
         $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
@@ -289,8 +293,11 @@ switch ($accion) {
         $paginaActual = (int)($_GET['pagina'] ?? 1);
         $sort = $_GET['sort'] ?? null;
         $dir = $_GET['dir'] ?? 'DESC';
+        $verTodos = (isset($_GET['verTodos']) && $_GET['verTodos'] == '1');
         $offset = ($paginaActual - 1) * $registrosPorPagina;
-        $registros = $controlador->obtenerTodos($registrosPorPagina, $paginaActual, $sort, $dir);
+        $registros = $controlador->obtenerTodos($registrosPorPagina, $paginaActual, $sort, $dir, $verTodos);
+        $totalRegistros = $controlador->modelo->contarRegistros($verTodos);
+        $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
         include '../vistas/vista_pacientes.php';
         break;
 }

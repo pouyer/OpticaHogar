@@ -30,7 +30,7 @@ if (file_exists(__DIR__ . '/../../.env')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Administracion</title>
    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"> -->
-    <link rel="stylesheet" href="../css/estiloMenu.css">
+    <link rel="stylesheet" href="../css/estiloMenu.css?v=1.1">
     <?php include('../headIconos.php'); // Incluir los elementos del encabezado iconos?>
 </head>
 <body>
@@ -59,14 +59,14 @@ if (file_exists(__DIR__ . '/../../.env')) {
                 
                 <!-- Columna Info Usuario -->
                 <div id="headerContent">
-                    <div class="user-info d-flex justify-content-between align-items-center">
+                    <div class="user-info d-flex align-items-center">
                         <h2 class="welcome-text m-0">Bienvenido(a), <?php echo htmlspecialchars($usuario_nombre); ?></h2> 
                         <div class="d-flex gap-2">
-                            <a href="vista_cambiar_password.php?source=menu" class="btn btn-warning" target="iframeTrabajo">
-                                <i class="icon-lock"></i> Cambiar Contraseña
+                            <a href="vista_cambiar_password.php?source=menu" class="btn btn-warning" target="iframeTrabajo" title="Cambiar Contraseña">
+                                <i class="icon-lock"></i> <span class="btn-text">Cambiar Contraseña</span>
                             </a>
-                            <a href="../controladores/controlador_login.php?action=logout" class="btn btn-danger logout-btn">
-                                <i class="icon-logout"></i> Cerrar Sesión
+                            <a href="../controladores/controlador_login.php?action=logout" class="btn btn-danger logout-btn" title="Cerrar Sesión">
+                                <i class="icon-logout"></i> <span class="btn-text">Cerrar Sesión</span>
                             </a>
                         </div>
                     </div>

@@ -198,7 +198,7 @@ switch ($accion) {
     case 'crear':
         $datos = $_POST;
         // Inyección automática de Auditoría de Usuario (Insert)
-                                                                                                                                                            $datos['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
+                                                                                                                                                                                $datos['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
                                                                     $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
                                                 $resultado = $controlador->crear($datos);
         echo json_encode($resultado);
@@ -208,7 +208,7 @@ switch ($accion) {
         $id = $_POST['id']; // Usar el campo de llave primaria
         $datos = $_POST;
         // Inyección automática de Auditoría de Usuario (Update)
-                                                                                                                                                                                                    $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
+                                                                                                                                                                                                                        $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
                                                 unset($datos['id']); // Eliminar el ID de los datos
         $resultado = $controlador->actualizar($id, $datos);
         echo json_encode($resultado);

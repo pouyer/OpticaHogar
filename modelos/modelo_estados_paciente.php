@@ -28,7 +28,7 @@ class ModeloEstados_paciente {
     public function contarRegistrosPorBusqueda($termino) {
         $query = "SELECT COUNT(*) as total FROM estados_paciente ";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`, `estados_paciente`.`visible`) LIKE ?";
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -40,7 +40,7 @@ class ModeloEstados_paciente {
     // Obtener todos los registros
     public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas para evitar inyección SQL
-        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`'];
+        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`', '`estados_paciente`.`visible`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -59,7 +59,7 @@ class ModeloEstados_paciente {
 
         if (empty($orderSQL)) {
             // Usar ordenamiento predeterminado (hasta 3 niveles)
-            $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`codigo` ASC ";
+            $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`nombre` ASC ";
         }
 
         $query = "SELECT `estados_paciente`.*  FROM estados_paciente";
@@ -131,13 +131,6 @@ class ModeloEstados_paciente {
             $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
             $tipos .= 'i';
         }
-        // Campo: fecha_insercion
-        if (array_key_exists('fecha_insercion', $datos)) {
-            $campos[] = '`fecha_insercion`';
-            $valores[] = '?';
-            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
-            $tipos .= 's';
-        }
         // Campo: usuario_id_actualizo
         if (array_key_exists('usuario_id_actualizo', $datos)) {
             $campos[] = '`usuario_id_actualizo`';
@@ -157,6 +150,13 @@ class ModeloEstados_paciente {
             $campos[] = '`orden`';
             $valores[] = '?';
             $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
+            $tipos .= 'i';
+        }
+        // Campo: visible
+        if (array_key_exists('visible', $datos)) {
+            $campos[] = '`visible`';
+            $valores[] = '?';
+            $params[] = ($datos['visible'] === '' || $datos['visible'] === null) ? null : (int)$datos['visible'];
             $tipos .= 'i';
         }
 
@@ -211,12 +211,6 @@ class ModeloEstados_paciente {
             $params[] = ($datos['usuario_id_inserto'] === '' || $datos['usuario_id_inserto'] === null) ? null : (int)$datos['usuario_id_inserto'];
             $tipos .= 'i';
         }
-        // Campo: fecha_insercion
-        if (array_key_exists('fecha_insercion', $datos)) {
-            $actualizaciones[] = "`fecha_insercion` = ?";
-            $params[] = ($datos['fecha_insercion'] === '' || $datos['fecha_insercion'] === null) ? '' : $datos['fecha_insercion'];
-            $tipos .= 's';
-        }
         // Campo: usuario_id_actualizo
         if (array_key_exists('usuario_id_actualizo', $datos)) {
             $actualizaciones[] = "`usuario_id_actualizo` = ?";
@@ -233,6 +227,12 @@ class ModeloEstados_paciente {
         if (array_key_exists('orden', $datos)) {
             $actualizaciones[] = "`orden` = ?";
             $params[] = ($datos['orden'] === '' || $datos['orden'] === null) ? null : (int)$datos['orden'];
+            $tipos .= 'i';
+        }
+        // Campo: visible
+        if (array_key_exists('visible', $datos)) {
+            $actualizaciones[] = "`visible` = ?";
+            $params[] = ($datos['visible'] === '' || $datos['visible'] === null) ? null : (int)$datos['visible'];
             $tipos .= 'i';
         }
 
@@ -258,7 +258,7 @@ class ModeloEstados_paciente {
     // Función de búsqueda (reutilizada)
     public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas
-        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`'];
+        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`', '`estados_paciente`.`visible`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -276,12 +276,12 @@ class ModeloEstados_paciente {
         }
 
         if (empty($orderSQL)) {
-            $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`codigo` ASC ";
+            $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`nombre` ASC ";
         }
 
         $query = "SELECT `estados_paciente`.*  FROM estados_paciente";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`, `estados_paciente`.`visible`) LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -297,9 +297,9 @@ class ModeloEstados_paciente {
 
     public function contarPorCampo($campo, $valor) {
         // Validar campo
-        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`'];
+        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`', '`estados_paciente`.`visible`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'visible'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -338,8 +338,8 @@ class ModeloEstados_paciente {
 
     public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validación de campo idéntica a contarPorCampo
-        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`'];
-        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+        $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`', '`estados_paciente`.`visible`'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'visible'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -380,7 +380,7 @@ class ModeloEstados_paciente {
         }
         
         if (empty($orderSQL)) {
-             $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`codigo` ASC ";
+             $orderSQL = " ORDER BY `estados_paciente`.`estado` ASC, `estados_paciente`.`orden` ASC, `estados_paciente`.`nombre` ASC ";
         }
 
         $query = "SELECT `estados_paciente`.*  FROM estados_paciente";
@@ -399,7 +399,7 @@ class ModeloEstados_paciente {
     // Funcion de exportar datos
     public function exportarDatos($termino = '', $campoFiltro = '') {
         try {
-            $query = "SELECT `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden` FROM estados_paciente";
+            $query = "SELECT `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`, `estados_paciente`.`visible` FROM estados_paciente";
             $query .= " WHERE ";
             
             $usarFiltroCampo = false;
@@ -407,8 +407,8 @@ class ModeloEstados_paciente {
 
             if (!empty($campoFiltro)) {
                  // Validar campo
-                $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`'];
-                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden'];
+                $allowedColumns = ['`estados_paciente`.`id`', '`estados_paciente`.`codigo`', '`estados_paciente`.`nombre`', '`estados_paciente`.`descripcion`', '`estados_paciente`.`estado`', '`estados_paciente`.`usuario_id_inserto`', '`estados_paciente`.`fecha_insercion`', '`estados_paciente`.`usuario_id_actualizo`', '`estados_paciente`.`fecha_actualizacion`', '`estados_paciente`.`orden`', '`estados_paciente`.`visible`'];
+                $simpleCols = ['id', 'codigo', 'nombre', 'descripcion', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion', 'orden', 'visible'];
                 
                 $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
                 
@@ -433,7 +433,7 @@ class ModeloEstados_paciente {
             if ($usarFiltroCampo) {
                  $query .= $columnaSQL . " LIKE ?";
             } else {
-                $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`) LIKE ?";
+                $query .= "CONCAT_WS(' ', `estados_paciente`.`id`, `estados_paciente`.`codigo`, `estados_paciente`.`nombre`, `estados_paciente`.`descripcion`, `estados_paciente`.`estado`, `estados_paciente`.`usuario_id_inserto`, `estados_paciente`.`fecha_insercion`, `estados_paciente`.`usuario_id_actualizo`, `estados_paciente`.`fecha_actualizacion`, `estados_paciente`.`orden`, `estados_paciente`.`visible`) LIKE ?";
             }
 
             if (!$this->conexion) {

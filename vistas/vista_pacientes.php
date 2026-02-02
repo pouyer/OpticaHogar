@@ -22,6 +22,7 @@ if (function_exists('generateCSRFToken')) {
 
 $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
 $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$verTodos = (isset($_GET['verTodos']) && $_GET['verTodos'] == '1');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -69,10 +70,10 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
                             <i class="icon-export me-1"></i> Exportar
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=excel&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-excel text-success me-2"></i> Excel</a></li>
-                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=csv&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-text text-primary me-2"></i> CSV</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=excel&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>&verTodos=<?php echo $verTodos ? '1' : '0'; ?>"><i class="icon-file-excel text-success me-2"></i> Excel</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=csv&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>&verTodos=<?php echo $verTodos ? '1' : '0'; ?>"><i class="icon-file-text text-primary me-2"></i> CSV</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=txt&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-doc-text-inv text-secondary me-2"></i> TXT</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_pacientes.php?action=exportar&formato=txt&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>&verTodos=<?php echo $verTodos ? '1' : '0'; ?>"><i class="icon-doc-text-inv text-secondary me-2"></i> TXT</a></li>
                         </ul>
                     </div>
                     <?php endif; ?>
@@ -88,14 +89,24 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
             <div class="card-body p-4">
                 <!-- Buscador -->
                 <form method="GET" action="vista_pacientes.php" class="mb-4">
-                    <div class="input-group">
-                        <input type="text" name="busqueda" class="form-control search-box p-2" placeholder="Buscar por cualquier campo..." value="<?php echo isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : ''; ?>">
-                        <input type="hidden" name="action" value="buscar">
-                        <input type="hidden" name="registrosPorPagina" value="<?= $registrosPorPagina ?>">
-                        <button type="submit" class="btn search-btn px-4"><i class="icon-search"></i></button>
-                        <?php if(isset($_GET['busqueda']) && $_GET['busqueda'] !== ''): ?>
-                            <a href="vista_pacientes.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
-                        <?php endif; ?>
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <div class="input-group">
+                                <input type="text" name="busqueda" class="form-control search-box p-2" placeholder="Buscar por cualquier campo..." value="<?php echo isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : ''; ?>">
+                                <input type="hidden" name="action" value="buscar">
+                                <input type="hidden" name="registrosPorPagina" value="<?= $registrosPorPagina ?>">
+                                <button type="submit" class="btn search-btn px-4"><i class="icon-search"></i></button>
+                                <?php if(isset($_GET['busqueda']) && $_GET['busqueda'] !== ''): ?>
+                                    <a href="vista_pacientes.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-check form-switch d-flex align-items-center mb-0">
+                                <input class="form-check-input" type="checkbox" name="verTodos" id="verTodos" value="1" <?php echo $verTodos ? 'checked' : ''; ?> onchange="this.form.submit()" style="cursor: pointer; width: 3em; height: 1.5em;">
+                                <label class="form-check-label ms-2 fw-bold text-muted" for="verTodos" style="cursor: pointer;">Ver todos los estados</label>
+                            </div>
+                        </div>
                     </div>
                 </form>
 
@@ -158,16 +169,16 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                             if (isset($_GET['action']) && $_GET['action'] === 'buscar') {
                                 if (!empty($campoFiltro) && !empty($termino)) {
                                      // Búsqueda avanzada por campo
-                                     $totalRegistros = $modelo->contarPorCampo($campoFiltro, $termino);
-                                     $registros = $modelo->buscarPorCampo($campoFiltro, $termino, $registrosPorPagina, $offset, $sort, $dir);
+                                     $totalRegistros = $modelo->contarPorCampo($campoFiltro, $termino, $verTodos);
+                                     $registros = $modelo->buscarPorCampo($campoFiltro, $termino, $registrosPorPagina, $offset, $sort, $dir, $verTodos);
                                 } else {
                                      // Búsqueda general
-                                     $totalRegistros = $modelo->contarRegistrosPorBusqueda($termino);
-                                     $registros = $modelo->buscar($termino, $registrosPorPagina, $offset, $sort, $dir);
+                                     $totalRegistros = $modelo->contarRegistrosPorBusqueda($termino, $verTodos);
+                                     $registros = $modelo->buscar($termino, $registrosPorPagina, $offset, $sort, $dir, $verTodos);
                                 }
                             } else {
-                                $totalRegistros = $modelo->contarRegistros();
-                                $registros = $modelo->obtenerTodos($registrosPorPagina, $offset, $sort, $dir);
+                                $totalRegistros = $modelo->contarRegistros($verTodos);
+                                $registros = $modelo->obtenerTodos($registrosPorPagina, $offset, $sort, $dir, $verTodos);
                             }
 
                             if ($registros):
@@ -314,7 +325,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                 for ($i = 1; $i <= $totalPaginas; $i++):
                 ?>
                     <li class="page-item <?= $i == $paginaActual ? 'active' : '' ?> ">
-                        <a class="page-link" href="?pagina=<?= $i ?>&registrosPorPagina=<?= $registrosPorPagina ?>&action=<?= $_GET['action'] ?? '' ?>&busqueda=<?= urlencode($termino) ?>&campo=<?= urlencode($campoFiltro) ?>"><?= $i ?></a>
+                        <a class="page-link" href="?pagina=<?= $i ?>&registrosPorPagina=<?= $registrosPorPagina ?>&action=<?= $_GET['action'] ?? '' ?>&busqueda=<?= urlencode($termino) ?>&campo=<?= urlencode($campoFiltro) ?>&verTodos=<?= $verTodos ? '1' : '0' ?>"><?= $i ?></a>
                     </li>
                 <?php endfor; ?>
             </ul>

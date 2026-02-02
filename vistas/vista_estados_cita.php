@@ -127,6 +127,11 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_cita`.`bloquea_registro`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        bloquea_registro                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_cita`.`bloquea_registro`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                        <?php endif; ?>                                    </a>
+                                </th>
+                                <th>
                                     <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`estados_cita`.`orden`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
                                         orden                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`estados_cita`.`orden`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
@@ -186,6 +191,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                     <td><?php $isChecked = ($registro['restringe_nueva_cita'] == 1 || $registro['restringe_nueva_cita'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td><?php $isChecked = ($registro['mostrar_en_hc'] == 1 || $registro['mostrar_en_hc'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
+                    <td><?php $isChecked = ($registro['bloquea_registro'] == 1 || $registro['bloquea_registro'] === true) ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td><?php echo htmlspecialchars($registro['orden']); ?></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
@@ -199,6 +205,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-color="<?php echo htmlspecialchars($registro['color']); ?>"
                            data-restringe_nueva_cita="<?php echo htmlspecialchars($registro['restringe_nueva_cita']); ?>"
                            data-mostrar_en_hc="<?php echo htmlspecialchars($registro['mostrar_en_hc']); ?>"
+                           data-bloquea_registro="<?php echo htmlspecialchars($registro['bloquea_registro']); ?>"
                            data-orden="<?php echo htmlspecialchars($registro['orden']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
@@ -307,6 +314,14 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <label class="form-check-label" for="estado">Activo/Inactivo</label>
                                     </div>
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="bloquea_registro">bloquea_registro:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="bloquea_registro" value="0">
+                                        <input class="form-check-input" type="checkbox" id="bloquea_registro" name="bloquea_registro" value="1">
+                                        <label class="form-check-label" for="bloquea_registro">Si/No</label>
+                                    </div>
+                                </div>
                             </div>                            <div class="text-end mt-4">
                                 <button type="button" class="btn btn-light btn-premium me-2" data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" class="btn btn-premium btn-primary px-5"><i class="icon-ok-2 me-1"></i> Guardar</button>
@@ -386,6 +401,14 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <input type="hidden" name="estado" value="inactivo">
                                         <input class="form-check-input" type="checkbox" id="estado" name="estado" value="activo">
                                         <label class="form-check-label" for="estado">Activo/Inactivo</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                     <label for="bloquea_registro_actualizar">bloquea_registro:</label>
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="bloquea_registro" value="0">
+                                        <input class="form-check-input" type="checkbox" id="bloquea_registro_actualizar" name="bloquea_registro" value="1">
+                                        <label class="form-check-label" for="bloquea_registro_actualizar">Si/No</label>
                                     </div>
                                 </div>
                             </div>                                 <input type="hidden" id="idActualizar" name="idActualizar">
@@ -517,6 +540,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputmostrar_en_hc.checked = (valormostrar_en_hc == '1' || valormostrar_en_hc == 'true');
                     } else {
                         inputmostrar_en_hc.value = valormostrar_en_hc;
+                    }
+                }
+                var valorbloquea_registro = button.getAttribute('data-bloquea_registro');
+                var inputbloquea_registro = modal.querySelector('#bloquea_registro_actualizar');
+                if(inputbloquea_registro) {
+                    if (inputbloquea_registro.type === 'checkbox') {
+                        inputbloquea_registro.checked = (valorbloquea_registro == '1' || valorbloquea_registro == 'true');
+                    } else {
+                        inputbloquea_registro.value = valorbloquea_registro;
                     }
                 }
                 var valororden = button.getAttribute('data-orden');

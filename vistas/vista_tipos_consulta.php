@@ -112,8 +112,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`tipos_consulta`.`color`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        color                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`tipos_consulta`.`color`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`tipos_consulta`.`codigo_cups`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">                                        Código CUPS                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`tipos_consulta`.`codigo_cups`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
@@ -168,7 +167,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     <td><?php echo htmlspecialchars($registro['codigo']); ?></td>
                     <td><?php echo htmlspecialchars($registro['nombre']); ?></td>
                     <td><?php echo htmlspecialchars($registro['descripcion']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['color']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['codigo_cups']); ?></td>
                     <td><?php echo htmlspecialchars($registro['orden']); ?></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
@@ -179,7 +178,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-codigo="<?php echo htmlspecialchars($registro['codigo']); ?>"
                            data-nombre="<?php echo htmlspecialchars($registro['nombre']); ?>"
                            data-descripcion="<?php echo htmlspecialchars($registro['descripcion']); ?>"
-                           data-color="<?php echo htmlspecialchars($registro['color']); ?>"
+                           data-codigo_cups="<?php echo htmlspecialchars($registro['codigo_cups']); ?>"
                            data-orden="<?php echo htmlspecialchars($registro['orden']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
@@ -254,8 +253,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                     <input type="text" class="form-control" id="descripcion" name="descripcion">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="color">color:</label>
-                                    <input type="text" class="form-control" id="color" name="color">
+                                    <label for="codigo_cups">Código CUPS:</label>
+                                    <input type="text" class="form-control" id="codigo_cups" name="codigo_cups">
                                 </div>
                             </div>                            <div class="row">                                <div class="col-md-6 mb-3">
                                     <label for="orden">orden:</label>
@@ -316,8 +315,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                      <input type="text" class="form-control" id="descripcion" name="descripcion">
                                 </div>
                                  <div class="col-md-6 mb-3">
-                                     <label for="color">color:</label>
-                                     <input type="text" class="form-control" id="color" name="color">
+                                     <label for="codigo_cups">Código CUPS:</label>
+                                     <input type="text" class="form-control" id="codigo_cups" name="codigo_cups">
                                 </div>
                             </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
                                      <label for="orden">orden:</label>
@@ -431,13 +430,13 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputdescripcion.value = valordescripcion;
                     }
                 }
-                var valorcolor = button.getAttribute('data-color');
-                var inputcolor = modal.querySelector('#color');
-                if(inputcolor) {
-                    if (inputcolor.type === 'checkbox') {
-                        inputcolor.checked = (valorcolor === 'activo');
+                var valorcodigo_cups = button.getAttribute('data-codigo_cups');
+                var inputcodigo_cups = modal.querySelector('#codigo_cups');
+                if(inputcodigo_cups) {
+                    if (inputcodigo_cups.type === 'checkbox') {
+                        inputcodigo_cups.checked = (valorcodigo_cups === 'activo');
                     } else {
-                        inputcolor.value = valorcolor;
+                        inputcodigo_cups.value = valorcodigo_cups;
                     }
                 }
                 var valororden = button.getAttribute('data-orden');

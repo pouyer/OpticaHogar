@@ -99,9 +99,7 @@ unset($_SESSION['restablecer_exito']);
                 <a href='vista_restablecer_password.php'>¿Olvidaste tu contraseña?</a>
             </div>
             
-            <div class='text-center mt-3'>
-                <p>¿No tienes una cuenta? <a href='vista_registro.php'>Regístrate aquí</a></p>
-            </div>
+            <!-- Registro oculto por seguridad según requerimiento del usuario -->
         </div>
     </div>
         <script src='https://code.jquery.com/jquery-3.7.1.min.js'></script>

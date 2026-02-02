@@ -66,8 +66,12 @@ class ModeloPacientes {
     }
 
     // Función para contar registros
-    public function contarRegistros() {
+    public function contarRegistros($verTodos = false) {
         $query = "SELECT COUNT(*) as total FROM pacientes";
+        if (!$verTodos) {
+            $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
+            $query .= " WHERE `estados_paciente`.`visible` = 1 ";
+        }
         $stmt = $this->conexion->prepare($query);
         $stmt->execute();
         $resultado = $stmt->get_result();
@@ -75,7 +79,7 @@ class ModeloPacientes {
     }
 
     // Función de contarRegistrosPorBusqueda
-    public function contarRegistrosPorBusqueda($termino) {
+    public function contarRegistrosPorBusqueda($termino, $verTodos = false) {
         $query = "SELECT COUNT(*) as total FROM pacientes ";
         $query .= " LEFT JOIN `tipos_identificacion` ON `pacientes`.`tipo_identificacion_id` = `tipos_identificacion`.`id` ";
         $query .= " LEFT JOIN `generos` ON `pacientes`.`genero_id` = `generos`.`id` ";
@@ -86,8 +90,11 @@ class ModeloPacientes {
         $query .= " LEFT JOIN `parentescos` ON `pacientes`.`parentesco_id` = `parentescos`.`id` ";
         $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
         $query .= " LEFT JOIN `paises` ON `pacientes`.`id_pais` = `paises`.`id` ";
-        $query .= " WHERE ";
-        $query .= "CONVERT(CONCAT_WS(' ', `pacientes`.`id`, `pacientes`.`tipo_identificacion_id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`id_pais`, `pacientes`.`genero_id`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`eps_id`, `pacientes`.`ocupacion_id`, `pacientes`.`estado_civil_id`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`parentesco_id`, `pacientes`.`grupo_sanguineo_id`, `pacientes`.`foto_ruta`, `pacientes`.`estado_paciente_id`, `pacientes`.`usuario_id_inserto`, `pacientes`.`fecha_insercion`, `pacientes`.`usuario_id_actualizo`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo`, `generos`.`nombre`, `grupos_sanguineos`.`codigo`, `eps`.`nombre`, `ocupaciones`.`nombre`, `estados_civiles`.`nombre`, `parentescos`.`nombre`, `estados_paciente`.`codigo`, `paises`.`nombre_pais`) USING utf8mb4) LIKE ?";
+        $query .= " WHERE (";
+        $query .= "CONVERT(CONCAT_WS(' ', `pacientes`.`id`, `pacientes`.`tipo_identificacion_id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`id_pais`, `pacientes`.`genero_id`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`eps_id`, `pacientes`.`ocupacion_id`, `pacientes`.`estado_civil_id`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`parentesco_id`, `pacientes`.`grupo_sanguineo_id`, `pacientes`.`foto_ruta`, `pacientes`.`estado_paciente_id`, `pacientes`.`usuario_id_inserto`, `pacientes`.`fecha_insercion`, `pacientes`.`usuario_id_actualizo`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo`, `generos`.`nombre`, `grupos_sanguineos`.`codigo`, `eps`.`nombre`, `ocupaciones`.`nombre`, `estados_civiles`.`nombre`, `parentescos`.`nombre`, `estados_paciente`.`codigo`, `paises`.`nombre_pais`) USING utf8mb4) LIKE ? )";
+        if (!$verTodos) {
+            $query .= " AND `estados_paciente`.`visible` = 1 ";
+        }
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -97,7 +104,7 @@ class ModeloPacientes {
     }
 
     // Obtener todos los registros
-    public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+    public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC', $verTodos = false) {
         // Validar columnas permitidas para evitar inyección SQL
         $allowedColumns = ['`pacientes`.`id`', '`pacientes`.`tipo_identificacion_id`', '`pacientes`.`identificacion`', '`pacientes`.`fecha_ingreso`', '`pacientes`.`primer_nombre`', '`pacientes`.`segundo_nombre`', '`pacientes`.`primer_apellido`', '`pacientes`.`segundo_apellido`', '`pacientes`.`fecha_nacimiento`', '`pacientes`.`id_pais`', '`pacientes`.`genero_id`', '`pacientes`.`direccion`', '`pacientes`.`ciudad`', '`pacientes`.`localidad`', '`pacientes`.`departamento`', '`pacientes`.`telefono_principal`', '`pacientes`.`telefono_secundario`', '`pacientes`.`email`', '`pacientes`.`eps_id`', '`pacientes`.`ocupacion_id`', '`pacientes`.`estado_civil_id`', '`pacientes`.`identificacion_acompaniante`', '`pacientes`.`acompaniante_nombres`', '`pacientes`.`acompaniante_apellidos`', '`pacientes`.`acompaniante_telefono`', '`pacientes`.`acompañante_email`', '`pacientes`.`parentesco_id`', '`pacientes`.`grupo_sanguineo_id`', '`pacientes`.`foto_ruta`', '`pacientes`.`estado_paciente_id`', '`pacientes`.`usuario_id_inserto`', '`pacientes`.`fecha_insercion`', '`pacientes`.`usuario_id_actualizo`', '`pacientes`.`fecha_actualizacion`', '`tipos_identificacion`.`codigo`', '`generos`.`nombre`', '`grupos_sanguineos`.`codigo`', '`eps`.`nombre`', '`ocupaciones`.`nombre`', '`estados_civiles`.`nombre`', '`parentescos`.`nombre`', '`estados_paciente`.`codigo`', '`paises`.`nombre_pais`'];
         
@@ -133,6 +140,9 @@ class ModeloPacientes {
         $query .= " LEFT JOIN `parentescos` ON `pacientes`.`parentesco_id` = `parentescos`.`id` ";
         $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
         $query .= " LEFT JOIN `paises` ON `pacientes`.`id_pais` = `paises`.`id` ";
+        if (!$verTodos) {
+            $query .= " WHERE `estados_paciente`.`visible` = 1 ";
+        }
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         $stmt = $this->conexion->prepare($query);
@@ -698,7 +708,7 @@ class ModeloPacientes {
     }
 
     // Función de búsqueda (reutilizada)
-    public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+    public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC', $verTodos = false) {
         // Validar columnas permitidas
         $allowedColumns = ['`pacientes`.`id`', '`pacientes`.`tipo_identificacion_id`', '`pacientes`.`identificacion`', '`pacientes`.`fecha_ingreso`', '`pacientes`.`primer_nombre`', '`pacientes`.`segundo_nombre`', '`pacientes`.`primer_apellido`', '`pacientes`.`segundo_apellido`', '`pacientes`.`fecha_nacimiento`', '`pacientes`.`id_pais`', '`pacientes`.`genero_id`', '`pacientes`.`direccion`', '`pacientes`.`ciudad`', '`pacientes`.`localidad`', '`pacientes`.`departamento`', '`pacientes`.`telefono_principal`', '`pacientes`.`telefono_secundario`', '`pacientes`.`email`', '`pacientes`.`eps_id`', '`pacientes`.`ocupacion_id`', '`pacientes`.`estado_civil_id`', '`pacientes`.`identificacion_acompaniante`', '`pacientes`.`acompaniante_nombres`', '`pacientes`.`acompaniante_apellidos`', '`pacientes`.`acompaniante_telefono`', '`pacientes`.`acompañante_email`', '`pacientes`.`parentesco_id`', '`pacientes`.`grupo_sanguineo_id`', '`pacientes`.`foto_ruta`', '`pacientes`.`estado_paciente_id`', '`pacientes`.`usuario_id_inserto`', '`pacientes`.`fecha_insercion`', '`pacientes`.`usuario_id_actualizo`', '`pacientes`.`fecha_actualizacion`', '`tipos_identificacion`.`codigo`', '`generos`.`nombre`', '`grupos_sanguineos`.`codigo`', '`eps`.`nombre`', '`ocupaciones`.`nombre`', '`estados_civiles`.`nombre`', '`parentescos`.`nombre`', '`paises`.`nombre_pais`', '`estados_paciente`.`codigo`'];
         
@@ -733,8 +743,11 @@ class ModeloPacientes {
         $query .= " LEFT JOIN `parentescos` ON `pacientes`.`parentesco_id` = `parentescos`.`id` ";
         $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
         $query .= " LEFT JOIN `paises` ON `pacientes`.`id_pais` = `paises`.`id` ";
-        $query .= " WHERE ";
-        $query .= "CONVERT(CONCAT_WS(' ', `pacientes`.`id`, `pacientes`.`tipo_identificacion_id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`id_pais`, `pacientes`.`genero_id`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`eps_id`, `pacientes`.`ocupacion_id`, `pacientes`.`estado_civil_id`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`parentesco_id`, `pacientes`.`grupo_sanguineo_id`, `pacientes`.`foto_ruta`, `pacientes`.`estado_paciente_id`, `pacientes`.`usuario_id_inserto`, `pacientes`.`fecha_insercion`, `pacientes`.`usuario_id_actualizo`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo`, `generos`.`nombre`, `grupos_sanguineos`.`codigo`, `eps`.`nombre`, `ocupaciones`.`nombre`, `estados_civiles`.`nombre`, `parentescos`.`nombre`, `estados_paciente`.`codigo`, `paises`.`nombre_pais`) USING utf8mb4) LIKE ?";
+        $query .= " WHERE (";
+        $query .= "CONVERT(CONCAT_WS(' ', `pacientes`.`id`, `pacientes`.`tipo_identificacion_id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`id_pais`, `pacientes`.`genero_id`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`eps_id`, `pacientes`.`ocupacion_id`, `pacientes`.`estado_civil_id`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`parentesco_id`, `pacientes`.`grupo_sanguineo_id`, `pacientes`.`foto_ruta`, `pacientes`.`estado_paciente_id`, `pacientes`.`usuario_id_inserto`, `pacientes`.`fecha_insercion`, `pacientes`.`usuario_id_actualizo`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo`, `generos`.`nombre`, `grupos_sanguineos`.`codigo`, `eps`.`nombre`, `ocupaciones`.`nombre`, `estados_civiles`.`nombre`, `parentescos`.`nombre`, `estados_paciente`.`codigo`, `paises`.`nombre_pais`) USING utf8mb4) LIKE ? )";
+        if (!$verTodos) {
+            $query .= " AND `estados_paciente`.`visible` = 1 ";
+        }
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -749,7 +762,7 @@ class ModeloPacientes {
 
     // --- Métodos para Vistas (Búsqueda por Campo) ---
 
-    public function contarPorCampo($campo, $valor) {
+    public function contarPorCampo($campo, $valor, $verTodos = false) {
         $allowedColumns = ['`pacientes`.`id`', '`pacientes`.`tipo_identificacion_id`', '`pacientes`.`identificacion`', '`pacientes`.`fecha_ingreso`', '`pacientes`.`primer_nombre`', '`pacientes`.`segundo_nombre`', '`pacientes`.`primer_apellido`', '`pacientes`.`segundo_apellido`', '`pacientes`.`fecha_nacimiento`', '`pacientes`.`id_pais`', '`pacientes`.`genero_id`', '`pacientes`.`direccion`', '`pacientes`.`ciudad`', '`pacientes`.`localidad`', '`pacientes`.`departamento`', '`pacientes`.`telefono_principal`', '`pacientes`.`telefono_secundario`', '`pacientes`.`email`', '`pacientes`.`eps_id`', '`pacientes`.`ocupacion_id`', '`pacientes`.`estado_civil_id`', '`pacientes`.`identificacion_acompaniante`', '`pacientes`.`acompaniante_nombres`', '`pacientes`.`acompaniante_apellidos`', '`pacientes`.`acompaniante_telefono`', '`pacientes`.`acompañante_email`', '`pacientes`.`parentesco_id`', '`pacientes`.`grupo_sanguineo_id`', '`pacientes`.`foto_ruta`', '`pacientes`.`estado_paciente_id`', '`pacientes`.`usuario_id_inserto`', '`pacientes`.`fecha_insercion`', '`pacientes`.`usuario_id_actualizo`', '`pacientes`.`fecha_actualizacion`', '`tipos_identificacion`.`codigo`', '`generos`.`nombre`', '`grupos_sanguineos`.`codigo`', '`eps`.`nombre`', '`ocupaciones`.`nombre`', '`estados_civiles`.`nombre`', '`parentescos`.`nombre`', '`estados_paciente`.`codigo`', '`paises`.`nombre_pais`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
         $simpleCols = ['id', 'tipo_identificacion_id', 'identificacion', 'fecha_ingreso', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'id_pais', 'genero_id', 'direccion', 'ciudad', 'localidad', 'departamento', 'telefono_principal', 'telefono_secundario', 'email', 'eps_id', 'ocupacion_id', 'estado_civil_id', 'identificacion_acompaniante', 'acompaniante_nombres', 'acompaniante_apellidos', 'acompaniante_telefono', 'acompañante_email', 'parentesco_id', 'grupo_sanguineo_id', 'foto_ruta', 'estado_paciente_id', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
@@ -789,6 +802,9 @@ class ModeloPacientes {
         $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
         $query .= " LEFT JOIN `paises` ON `pacientes`.`id_pais` = `paises`.`id` ";
         $query .= " WHERE CONVERT(" . $columnaSQL . " USING utf8mb4) LIKE ?";
+        if (!$verTodos) {
+            $query .= " AND `estados_paciente`.`visible` = 1 ";
+        }
         
         $stmt = $this->conexion->prepare($query);
         if (!$stmt) return 0;
@@ -800,7 +816,7 @@ class ModeloPacientes {
         return (int)$fila['total'];
     }
 
-    public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
+    public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC', $verTodos = false) {
         // Validación de campo idéntica a contarPorCampo
         $allowedColumns = ['`pacientes`.`id`', '`pacientes`.`tipo_identificacion_id`', '`pacientes`.`identificacion`', '`pacientes`.`fecha_ingreso`', '`pacientes`.`primer_nombre`', '`pacientes`.`segundo_nombre`', '`pacientes`.`primer_apellido`', '`pacientes`.`segundo_apellido`', '`pacientes`.`fecha_nacimiento`', '`pacientes`.`id_pais`', '`pacientes`.`genero_id`', '`pacientes`.`direccion`', '`pacientes`.`ciudad`', '`pacientes`.`localidad`', '`pacientes`.`departamento`', '`pacientes`.`telefono_principal`', '`pacientes`.`telefono_secundario`', '`pacientes`.`email`', '`pacientes`.`eps_id`', '`pacientes`.`ocupacion_id`', '`pacientes`.`estado_civil_id`', '`pacientes`.`identificacion_acompaniante`', '`pacientes`.`acompaniante_nombres`', '`pacientes`.`acompaniante_apellidos`', '`pacientes`.`acompaniante_telefono`', '`pacientes`.`acompañante_email`', '`pacientes`.`parentesco_id`', '`pacientes`.`grupo_sanguineo_id`', '`pacientes`.`foto_ruta`', '`pacientes`.`estado_paciente_id`', '`pacientes`.`usuario_id_inserto`', '`pacientes`.`fecha_insercion`', '`pacientes`.`usuario_id_actualizo`', '`pacientes`.`fecha_actualizacion`', '`tipos_identificacion`.`codigo`', '`generos`.`nombre`', '`grupos_sanguineos`.`codigo`', '`eps`.`nombre`', '`ocupaciones`.`nombre`', '`estados_civiles`.`nombre`', '`parentescos`.`nombre`', '`estados_paciente`.`codigo`', '`paises`.`nombre_pais`'];
         $simpleCols = ['id', 'tipo_identificacion_id', 'identificacion', 'fecha_ingreso', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'id_pais', 'genero_id', 'direccion', 'ciudad', 'localidad', 'departamento', 'telefono_principal', 'telefono_secundario', 'email', 'eps_id', 'ocupacion_id', 'estado_civil_id', 'identificacion_acompaniante', 'acompaniante_nombres', 'acompaniante_apellidos', 'acompaniante_telefono', 'acompañante_email', 'parentesco_id', 'grupo_sanguineo_id', 'foto_ruta', 'estado_paciente_id', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
@@ -872,11 +888,9 @@ class ModeloPacientes {
     }
 
     // Funcion de exportar datos
-    public function exportarDatos($termino = '', $campoFiltro = '') {
+    public function exportarDatos($termino = '', $campoFiltro = '', $verTodos = false) {
         try {
-            $query = "SELECT `pacientes`.*, 
-                             CONCAT(`pacientes`.primer_nombre, ' ', COALESCE(`pacientes`.segundo_nombre,''), ' ', `pacientes`.primer_apellido, ' ', COALESCE(`pacientes`.segundo_apellido,'')) AS nombre_completo,
-                             `tipos_identificacion`.`codigo` as `tipo_identificacion_id_display` , `generos`.`nombre` as `genero_id_display` , `grupos_sanguineos`.`codigo` as `grupo_sanguineo_id_display` , `eps`.`nombre` as `eps_id_display` , `ocupaciones`.`nombre` as `ocupacion_id_display` , `estados_civiles`.`nombre` as `estado_civil_id_display` , `parentescos`.`nombre` as `parentesco_id_display` , `estados_paciente`.`codigo` as `estado_paciente_id_display`, `paises`.`nombre_pais` as `id_pais_display`  FROM pacientes";
+            $query = "SELECT `pacientes`.`id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`foto_ruta`, `pacientes`.`fecha_insercion`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo` as `tipo_identificacion_id`, `generos`.`nombre` as `genero_id`, `grupos_sanguineos`.`codigo` as `grupo_sanguineo_id`, `eps`.`nombre` as `eps_id`, `ocupaciones`.`nombre` as `ocupacion_id`, `estados_civiles`.`nombre` as `estado_civil_id`, `parentescos`.`nombre` as `parentesco_id`, `estados_paciente`.`codigo` as `estado_paciente_id`, `paises`.`nombre_pais` as `id_pais` FROM pacientes";
             $query .= " LEFT JOIN `tipos_identificacion` ON `pacientes`.`tipo_identificacion_id` = `tipos_identificacion`.`id` ";
             $query .= " LEFT JOIN `generos` ON `pacientes`.`genero_id` = `generos`.`id` ";
             $query .= " LEFT JOIN `grupos_sanguineos` ON `pacientes`.`grupo_sanguineo_id` = `grupos_sanguineos`.`id` ";
@@ -886,7 +900,7 @@ class ModeloPacientes {
             $query .= " LEFT JOIN `parentescos` ON `pacientes`.`parentesco_id` = `parentescos`.`id` ";
             $query .= " LEFT JOIN `estados_paciente` ON `pacientes`.`estado_paciente_id` = `estados_paciente`.`id` ";
             $query .= " LEFT JOIN `paises` ON `pacientes`.`id_pais` = `paises`.`id` ";
-            $query .= " WHERE ";
+            $query .= " WHERE (";
             
             $usarFiltroCampo = false;
             $columnaSQL = '';
@@ -917,9 +931,15 @@ class ModeloPacientes {
             }
 
             if ($usarFiltroCampo) {
-                 $query .= $columnaSQL . " LIKE ?";
+                 $query .= "CONVERT(" . $columnaSQL . " USING utf8mb4) LIKE ?";
             } else {
                 $query .= "CONVERT(CONCAT_WS(' ', `pacientes`.`id`, `pacientes`.`tipo_identificacion_id`, `pacientes`.`identificacion`, `pacientes`.`fecha_ingreso`, `pacientes`.`primer_nombre`, `pacientes`.`segundo_nombre`, `pacientes`.`primer_apellido`, `pacientes`.`segundo_apellido`, `pacientes`.`fecha_nacimiento`, `pacientes`.`id_pais`, `pacientes`.`genero_id`, `pacientes`.`direccion`, `pacientes`.`ciudad`, `pacientes`.`localidad`, `pacientes`.`departamento`, `pacientes`.`telefono_principal`, `pacientes`.`telefono_secundario`, `pacientes`.`email`, `pacientes`.`eps_id`, `pacientes`.`ocupacion_id`, `pacientes`.`estado_civil_id`, `pacientes`.`identificacion_acompaniante`, `pacientes`.`acompaniante_nombres`, `pacientes`.`acompaniante_apellidos`, `pacientes`.`acompaniante_telefono`, `pacientes`.`acompañante_email`, `pacientes`.`parentesco_id`, `pacientes`.`grupo_sanguineo_id`, `pacientes`.`foto_ruta`, `pacientes`.`estado_paciente_id`, `pacientes`.`usuario_id_inserto`, `pacientes`.`fecha_insercion`, `pacientes`.`usuario_id_actualizo`, `pacientes`.`fecha_actualizacion`, `tipos_identificacion`.`codigo`, `generos`.`nombre`, `grupos_sanguineos`.`codigo`, `eps`.`nombre`, `ocupaciones`.`nombre`, `estados_civiles`.`nombre`, `parentescos`.`nombre`, `estados_paciente`.`codigo`, `paises`.`nombre_pais`) USING utf8mb4) LIKE ?";
+            }
+
+            $query .= " ) ";
+
+            if (!$verTodos) {
+                $query .= " AND `estados_paciente`.`visible` = 1 ";
             }
 
             if (!$this->conexion) {

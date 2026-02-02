@@ -170,9 +170,9 @@ class ControladorCita {
         
         // Verificar estado actual de la cita antes de actualizar
         $citaActual = $this->modelo->obtenerPorId($id);
-        if ($citaActual && $citaActual['estado_cita_id'] == 2) { // 2 = REALIZADA
+        if ($citaActual && isset($citaActual['bloquea_registro']) && $citaActual['bloquea_registro'] == 1) {
             header('Content-Type: application/json');
-            echo json_encode(['error' => 'No se puede modificar una cita que ya ha sido REALIZADA.']);
+            echo json_encode(['error' => 'No se puede modificar una cita que ya ha sido bloqueada (Finalizada/Cancelada).']);
             exit;
         }
 
@@ -228,7 +228,7 @@ class ControladorCita {
     // Método para verificar si la cita es editable
     public function esEditable($id) {
         $cita = $this->modelo->obtenerPorId($id);
-        return ($cita && $cita['estado_cita_id'] != 2); // != REALIZADA
+        return ($cita && (!isset($cita['bloquea_registro']) || $cita['bloquea_registro'] != 1));
     }
 
     // Método para obtener datos para editar
@@ -287,7 +287,7 @@ class ControladorCita {
             try {
                 // Verificar si es editable antes de intentar actualizar
                 if (!$this->esEditable($postId)) {
-                     $datos['mensaje'] = "No se puede actualizar una cita en estado REALIZADA.";
+                     $datos['mensaje'] = "No se puede actualizar una cita que se encuentra bloqueada.";
                      $datos['tipo_alerta'] = "danger";
                 } else if ($this->modelo->actualizar($postId, $post)) {
                     $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'UPDATE', 'citas_control', 'Cita actualizada ID: ' . $postId);
@@ -342,6 +342,71 @@ class ControladorCita {
             'paginaActual' => $paginaActual
         ];
     }
+
+    // Método para autoguardado (AJAX)
+    public function autoguardar() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Método no permitido']);
+            exit;
+        }
+
+        $post = $_POST;
+        $id = $post['id'] ?? null;
+        unset($post['id']);
+
+        if (empty($post['paciente_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'ID de paciente requerido']);
+            exit;
+        }
+
+        try {
+            if ($id) {
+                // Verificar si la cita está bloqueada
+                $citaActual = $this->modelo->obtenerPorId($id);
+                if ($citaActual && isset($citaActual['bloquea_registro']) && $citaActual['bloquea_registro'] == 1) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['error' => 'Cita bloqueada para edición']);
+                    exit;
+                }
+
+                // Actualizar cita existente
+                $post['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
+                $exito = $this->modelo->actualizar($id, $post);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => $exito,
+                    'id' => $id,
+                    'msg' => 'Cita actualizada (autoguardado)',
+                    'timestamp' => date('H:i:s')
+                ]);
+            } else {
+                // Crear nueva cita en estado 6 (En Proceso)
+                $profesional = $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0);
+                if (!$profesional) {
+                    throw new Exception("Usuario no asociado a un profesional.");
+                }
+
+                $post['profesional_id'] = $profesional['id'];
+                $post['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
+                $post['estado_cita_id'] = 6; // EN_PROCESO
+                
+                $nuevoId = $this->modelo->guardarCita($post);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => (bool)$nuevoId,
+                    'id' => $nuevoId,
+                    'msg' => 'Cita creada (autoguardado)',
+                    'timestamp' => date('H:i:s')
+                ]);
+            }
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
 }
 
 // Manejo de las acciones
@@ -388,6 +453,10 @@ switch ($accion) {
     case 'verificar_restriccion':
         $id = $_GET['paciente_id'] ?? 0;
         $controlador->verificarRestriccion($id);
+        break;
+
+    case 'autoguardar':
+        $controlador->autoguardar();
         break;
 
     case 'listar':

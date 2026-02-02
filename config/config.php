@@ -5,7 +5,7 @@
         */
        
        // Información de versión
-       define('APP_VERSION', '1.0.3');
+       define('APP_VERSION', '1.0.0');
        define('APP_VERSION_DATE', '2026-01-26');
        define('APP_NAME', 'Óptica del Hogar');
        
