@@ -389,8 +389,20 @@
             <div>
                 <span class="data-label">Dirección y Localización:</span>
                 <div class="data-value">
-                    <?php echo htmlspecialchars($paciente['direccion'] ?? ''); ?><br>
-                    <?php echo htmlspecialchars(($paciente['localidad'] ? $paciente['localidad'] . ', ' : '') . ($paciente['ciudad'] ?? '') . ' (' . ($paciente['departamento'] ?? '') . ')'); ?>
+                    <?php 
+                        $dir = htmlspecialchars($paciente['direccion'] ?? '');
+                        $loc = htmlspecialchars($paciente['localidad'] ?? '');
+                        $ciu = htmlspecialchars($paciente['ciudad'] ?? '');
+                        $dep = htmlspecialchars($paciente['departamento'] ?? '');
+                        
+                        $linea1 = $dir;
+                        if ($loc) $linea1 .= ($linea1 ? ' - ' : '') . $loc;
+                        
+                        $linea2 = $ciu;
+                        if ($dep) $linea2 .= ($linea2 ? ' (' : '') . $dep . ($linea2 ? ')' : '');
+                        
+                        echo $linea1 . ($linea1 && $linea2 ? '<br>' : '') . $linea2;
+                    ?>
                 </div>
             </div>
             <div>

@@ -44,6 +44,8 @@ class ControladorCita {
                 'materiales' => $this->modelo->getMaterialesLentes(),
                 'usos' => $this->modelo->getUsosLentes(),
                 'tiposOrigen' => $this->modelo->getTiposOrigenEnfermedad(),
+                'causasExternas' => $this->modelo->getCausasExternas(),
+                'finalidadesConsulta' => $this->modelo->getFinalidadesConsulta(),
                 'estadosCita' => $this->modelo->getEstadosCita(),
                 'asistentes' => $this->modelo->getAsistentes(),
                 'mensaje' => $_GET['mensaje'] ?? '',
@@ -58,6 +60,8 @@ class ControladorCita {
                 'materiales' => [],
                 'usos' => [],
                 'tiposOrigen' => [],
+                'causasExternas' => [],
+                'finalidadesConsulta' => [],
                 'estadosCita' => [],
                 'asistentes' => [],
             ];
@@ -66,7 +70,7 @@ class ControladorCita {
         // --- PRE-CARGA DE PACIENTE (Desde Reporte) ---
         if (isset($_GET['paciente_id']) && !isset($cita)) {
             $pac_id = (int)$_GET['paciente_id'];
-            $sql_pac = "SELECT id, identificacion, CONCAT(primer_nombre, ' ', COALESCE(segundo_nombre,''), ' ', primer_apellido, ' ', COALESCE(segundo_apellido,'')) as nombre_completo, telefono_principal, f_anos(fecha_nacimiento) as edad_texto FROM pacientes WHERE id = ?";
+            $sql_pac = "SELECT p.id, p.identificacion, CONCAT(p.primer_nombre, ' ', COALESCE(p.segundo_nombre,''), ' ', p.primer_apellido, ' ', COALESCE(p.segundo_apellido,'')) as nombre_completo, p.telefono_principal, f_anos(p.fecha_nacimiento) as edad_texto, l.Nombre as localidad FROM pacientes p LEFT JOIN localidad l ON p.localidad_id = l.id WHERE p.id = ?";
             $stmt_pac = $this->modelo->getConexion()->prepare($sql_pac);
             $stmt_pac->bind_param('i', $pac_id);
             $stmt_pac->execute();
@@ -79,12 +83,28 @@ class ControladorCita {
                     'nombre' => $res_pac['nombre_completo'],
                     'identificacion' => $res_pac['identificacion'],
                     'telefono' => $res_pac['telefono_principal'],
-                    'edad' => $res_pac['edad_texto']
+                    'edad' => $res_pac['edad_texto'],
+                    'localidad' => $res_pac['localidad']
                 ];
+                
+                // Valores por defecto para RIPS si es nuevo
+                if (!isset($datos['paciente_precargado']['causa_externa_id']) && !empty($datos['causasExternas'])) {
+                    $datos['paciente_precargado']['causa_externa_id'] = $datos['causasExternas'][0]['id'];
+                }
+                if (!isset($datos['paciente_precargado']['finalidad_consulta_id']) && !empty($datos['finalidadesConsulta'])) {
+                    $datos['paciente_precargado']['finalidad_consulta_id'] = $datos['finalidadesConsulta'][0]['id'];
+                }
                 
                 // Determinar tipo de consulta automáticamente
                 $datos['tipo_consulta_sugerido'] = $this->modelo->tieneCitasPrevias($pac_id) ? 2 : 1; // 2=Control, 1=Primera
             }
+        }
+
+        if (!isset($datos['paciente_precargado']['causa_externa_id']) && !empty($datos['causasExternas'])) {
+             $datos['default_causa_externa_id'] = $datos['causasExternas'][0]['id'];
+        }
+        if (!isset($datos['paciente_precargado']['finalidad_consulta_id']) && !empty($datos['finalidadesConsulta'])) {
+             $datos['default_finalidad_consulta_id'] = $datos['finalidadesConsulta'][0]['id'];
         }
         
         // Verificar que el usuario esté asociado a un profesional
@@ -112,7 +132,7 @@ class ControladorCita {
             $post['estado_cita_id'] = !empty($post['estado_cita_id']) ? $post['estado_cita_id'] : 6;
 
             // Campos que pueden ser NULL
-            $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id'];
+            $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id', 'causa_externa_id', 'finalidad_consulta_id'];
             foreach ($nullables as $campo) {
                 $post[$campo] = empty($post[$campo]) ? null : $post[$campo];
             }
@@ -179,7 +199,7 @@ class ControladorCita {
         $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
         
         // Campos que pueden ser NULL
-        $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id'];
+        $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id', 'causa_externa_id', 'finalidad_consulta_id'];
         foreach ($nullables as $campo) {
             if (isset($datos[$campo])) {
                 $datos[$campo] = empty($datos[$campo]) ? null : $datos[$campo];
@@ -248,6 +268,8 @@ class ControladorCita {
                 'materiales' => $this->modelo->getMaterialesLentes(),
                 'usos' => $this->modelo->getUsosLentes(),
                 'tiposOrigen' => $this->modelo->getTiposOrigenEnfermedad(),
+                'causasExternas' => $this->modelo->getCausasExternas(),
+                'finalidadesConsulta' => $this->modelo->getFinalidadesConsulta(),
                 'estadosCita' => $this->modelo->getEstadosCita(),
                 'asistentes' => $this->modelo->getAsistentes(),
                 'profesional_logueado' => $this->modelo->getProfesionalByUsuario($_SESSION['usuario_id'] ?? 0),
@@ -264,6 +286,8 @@ class ControladorCita {
                 'materiales' => [],
                 'usos' => [],
                 'tiposOrigen' => [],
+                'causasExternas' => [],
+                'finalidadesConsulta' => [],
                 'estadosCita' => [],
                 'asistentes' => [],
                 'profesional_logueado' => null
@@ -277,7 +301,7 @@ class ControladorCita {
             $post['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
 
             // Campos que pueden ser NULL
-            $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id'];
+            $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id', 'causa_externa_id', 'finalidad_consulta_id'];
             foreach ($nullables as $campo) {
                 if (isset($post[$campo])) {
                     $post[$campo] = empty($post[$campo]) ? null : $post[$campo];

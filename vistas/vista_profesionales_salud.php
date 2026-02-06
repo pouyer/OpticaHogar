@@ -217,6 +217,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-tipo_profesional_id="<?php echo htmlspecialchars($registro['tipo_profesional_id']); ?>"
                            data-especialidad="<?php echo htmlspecialchars($registro['especialidad']); ?>"
                            data-registro_profesional="<?php echo htmlspecialchars($registro['registro_profesional']); ?>"
+                           data-codigo_prestador_minsalud="<?php echo htmlspecialchars($registro['codigo_prestador_minsalud']); ?>"
                            data-universidad="<?php echo htmlspecialchars($registro['universidad']); ?>"
                            data-anio_graduacion="<?php echo htmlspecialchars($registro['anio_graduacion']); ?>"
                            data-telefono_principal="<?php echo htmlspecialchars($registro['telefono_principal']); ?>"
@@ -338,6 +339,10 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 <div class="col-md-3 mb-3">
                                     <label for="registro_profesional">registro_profesional:</label>
                                     <input type="text" class="form-control" id="registro_profesional" name="registro_profesional">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="codigo_prestador_minsalud">Código Prestador Minsalud:</label>
+                                    <input type="text" class="form-control" id="codigo_prestador_minsalud" name="codigo_prestador_minsalud">
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label for="universidad">universidad:</label>
@@ -473,6 +478,10 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                      <label for="registro_profesional">registro_profesional:</label>
                                      <input type="text" class="form-control" id="registro_profesional" name="registro_profesional">
                                 </div>
+                                  <div class="col-md-3 mb-3">
+                                      <label for="codigo_prestador_minsalud">Código Prestador Minsalud:</label>
+                                      <input type="text" class="form-control" id="codigo_prestador_minsalud" name="codigo_prestador_minsalud">
+                                  </div>
                                  <div class="col-md-3 mb-3">
                                      <label for="universidad">universidad:</label>
                                      <input type="text" class="form-control" id="universidad" name="universidad">
@@ -690,6 +699,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputregistro_profesional.checked = (valorregistro_profesional === 'activo');
                     } else {
                         inputregistro_profesional.value = valorregistro_profesional;
+                    }
+                }
+                var valorcodigo_prestador_minsalud = button.getAttribute('data-codigo_prestador_minsalud');
+                var inputcodigo_prestador_minsalud = modal.querySelector('#codigo_prestador_minsalud');
+                if(inputcodigo_prestador_minsalud) {
+                    if (inputcodigo_prestador_minsalud.type === 'checkbox') {
+                        inputcodigo_prestador_minsalud.checked = (valorcodigo_prestador_minsalud === 'activo');
+                    } else {
+                        inputcodigo_prestador_minsalud.value = valorcodigo_prestador_minsalud;
                     }
                 }
                 var valoruniversidad = button.getAttribute('data-universidad');

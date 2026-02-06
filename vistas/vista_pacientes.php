@@ -232,14 +232,17 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                            data-id_pais="<?php echo htmlspecialchars($registro['id_pais']); ?>"
                            data-genero_id="<?php echo htmlspecialchars($registro['genero_id']); ?>"
                            data-grupo_sanguineo_id="<?php echo htmlspecialchars($registro['grupo_sanguineo_id']); ?>"
-                           data-departamento="<?php echo htmlspecialchars($registro['departamento']); ?>"
-                           data-ciudad="<?php echo htmlspecialchars($registro['ciudad']); ?>"
-                           data-localidad="<?php echo htmlspecialchars($registro['localidad']); ?>"
-                           data-direccion="<?php echo htmlspecialchars($registro['direccion']); ?>"
+                           data-pais_residencia_id="<?php echo htmlspecialchars($registro['pais_residencia_id']); ?>"
+                           data-departamento_id="<?php echo htmlspecialchars($registro['departamento_id']); ?>"
+                           data-municipio_id="<?php echo htmlspecialchars($registro['municipio_id']); ?>"
+                           data-localidad_id="<?php echo htmlspecialchars($registro['localidad_id']); ?>"
+                           data-zona_residencia="<?php echo htmlspecialchars($registro['zona_residencia']); ?>"
                            data-telefono_principal="<?php echo htmlspecialchars($registro['telefono_principal']); ?>"
                            data-telefono_secundario="<?php echo htmlspecialchars($registro['telefono_secundario']); ?>"
                            data-email="<?php echo htmlspecialchars($registro['email']); ?>"
                            data-eps_id="<?php echo htmlspecialchars($registro['eps_id']); ?>"
+                           data-id_regimen="<?php echo htmlspecialchars($registro['id_regimen']); ?>"
+                           data-id_tipo_usuario="<?php echo htmlspecialchars($registro['id_tipo_usuario']); ?>"
                            data-ocupacion_id="<?php echo htmlspecialchars($registro['ocupacion_id']); ?>"
                            data-estado_civil_id="<?php echo htmlspecialchars($registro['estado_civil_id']); ?>"
                            data-identificacion_acompaniante="<?php echo htmlspecialchars($registro['identificacion_acompaniante']); ?>"
@@ -387,11 +390,13 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                     <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="id_pais">País:</label>
+                                    <label for="id_pais">Nacionalidad:</label>
                                     <select class="form-select" id="id_pais" name="id_pais">
                                         <option value="">-- Seleccionar --</option>
-                                        <?php foreach ($modelo->obtenerRelacionado_id_pais() as $opcion): ?>
-                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php
+                                        $paises_nac = $modelo->obtenerRelacionado_id_pais();
+                                        foreach ($paises_nac as $idx => $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>" <?= $idx === 0 ? 'selected' : '' ?>><?= htmlspecialchars($opcion['texto']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -423,20 +428,42 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                             </div>
                             <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="departamento">Departamento:</label>
-                                    <input type="text" class="form-control" id="departamento" name="departamento">
+                                    <label for="pais_residencia_id">País Residencia:</label>
+                                    <select class="form-select" id="pais_residencia_id" name="pais_residencia_id" required onchange="cargarDepartamentos(this.value, 'departamento_id', 'municipio_id', 'localidad_id')">
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php 
+                                        $paises_res = $modelo->obtenerRelacionado_id_pais();
+                                        foreach ($paises_res as $idx => $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>" <?= $idx === 0 ? 'selected' : '' ?>><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="ciudad">Ciudad:</label>
-                                    <input type="text" class="form-control" id="ciudad" name="ciudad">
+                                    <label for="departamento_id">Departamento:</label>
+                                    <select class="form-select" id="departamento_id" name="departamento_id" required onchange="cargarMunicipios(this.value, 'municipio_id', 'localidad_id')">
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="localidad">Localidad:</label>
-                                    <input type="text" class="form-control" id="localidad" name="localidad">
+                                    <label for="municipio_id">Municipio:</label>
+                                    <select class="form-select" id="municipio_id" name="municipio_id" required onchange="cargarLocalidades(this.value, 'localidad_id')">
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="direccion">Dirección:</label>
-                                    <input type="text" class="form-control" id="direccion" name="direccion">
+                                    <label for="localidad_id">Localidad:</label>
+                                    <select class="form-select" id="localidad_id" name="localidad_id" required>
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="zona_residencia">Zona Residencia:</label>
+                                    <select class="form-select" id="zona_residencia" name="zona_residencia" required>
+                                        <option value="U" selected>Urbana</option>
+                                        <option value="R">Rural</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row">
@@ -458,6 +485,28 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                         <option value="">-- Seleccionar --</option>
                                         <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>
                                         <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_regimen">Régimen:</label>
+                                    <select class="form-select" id="id_regimen" name="id_regimen" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php 
+                                        $regimenes = $modelo->obtenerRelacionado_id_regimen();
+                                        foreach ($regimenes as $index => $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>" <?= $index === 0 ? 'selected' : '' ?>><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_tipo_usuario">Tipo Usuario:</label>
+                                    <select class="form-select" id="id_tipo_usuario" name="id_tipo_usuario" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php 
+                                        $tipos_u = $modelo->obtenerRelacionado_id_tipo_usuario();
+                                        foreach ($tipos_u as $index => $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>" <?= $index === 0 ? 'selected' : '' ?>><?= htmlspecialchars($opcion['texto']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -651,20 +700,40 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                             </div>
                             <div class="row">
                                 <div class="col-md-3 mb-3">
-                                    <label for="departamento_u">Departamento:</label>
-                                    <input type="text" class="form-control" id="departamento_u" name="departamento">
+                                    <label for="pais_residencia_id_u">País Residencia:</label>
+                                    <select class="form-select" id="pais_residencia_id_u" name="pais_residencia_id" required onchange="cargarDepartamentos(this.value, 'departamento_id_u', 'municipio_id_u', 'localidad_id_u')">
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_id_pais() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="ciudad_u">Ciudad:</label>
-                                    <input type="text" class="form-control" id="ciudad_u" name="ciudad">
+                                    <label for="departamento_id_u">Departamento:</label>
+                                    <select class="form-select" id="departamento_id_u" name="departamento_id" required onchange="cargarMunicipios(this.value, 'municipio_id_u', 'localidad_id_u')">
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="localidad_u">Localidad:</label>
-                                    <input type="text" class="form-control" id="localidad_u" name="localidad">
+                                    <label for="municipio_id_u">Municipio:</label>
+                                    <select class="form-select" id="municipio_id_u" name="municipio_id" required onchange="cargarLocalidades(this.value, 'localidad_id_u')">
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label for="direccion_u">Dirección:</label>
-                                    <input type="text" class="form-control" id="direccion_u" name="direccion">
+                                    <label for="localidad_id_u">Localidad:</label>
+                                    <select class="form-select" id="localidad_id_u" name="localidad_id" required>
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="zona_residencia_u">Zona Residencia:</label>
+                                    <select class="form-select" id="zona_residencia_u" name="zona_residencia" required>
+                                        <option value="U">Urbana</option>
+                                        <option value="R">Rural</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row">
@@ -685,6 +754,24 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                     <select class="form-select" id="eps_id_u" name="eps_id">
                                         <option value="">-- Seleccionar --</option>
                                         <?php foreach ($modelo->obtenerRelacionado_eps_id() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_regimen_u">Régimen:</label>
+                                    <select class="form-select" id="id_regimen_u" name="id_regimen" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_id_regimen() as $opcion): ?>
+                                        <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="id_tipo_usuario_u">Tipo Usuario:</label>
+                                    <select class="form-select" id="id_tipo_usuario_u" name="id_tipo_usuario" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <?php foreach ($modelo->obtenerRelacionado_id_tipo_usuario() as $opcion): ?>
                                         <option value="<?= $opcion['id'] ?>"><?= htmlspecialchars($opcion['texto']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
@@ -803,7 +890,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formCrear').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch('../controladores/controlador_pacientes.php?action=crear', {
+                fetch(`${CONTROLLER_URL}?action=crear`, {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -975,42 +1062,22 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputgrupo_sanguineo_id.value = valorgrupo_sanguineo_id;
                     }
                 }
-                var valordepartamento = button.getAttribute('data-departamento');
-                var inputdepartamento = document.getElementById('departamento_u');
-                if(inputdepartamento) {
-                    if (inputdepartamento.type === 'checkbox') {
-                        inputdepartamento.checked = (valordepartamento === 'activo');
-                    } else {
-                        inputdepartamento.value = valordepartamento;
-                    }
+                var valorpais_residencia_id = button.getAttribute('data-pais_residencia_id');
+                var valordepartamento_id = button.getAttribute('data-departamento_id');
+                var valormunicipio_id = button.getAttribute('data-municipio_id');
+                var valorlocalidad_id = button.getAttribute('data-localidad_id');
+                var valorzona_residencia = button.getAttribute('data-zona_residencia');
+
+                var inputpais_residencia_id = document.getElementById('pais_residencia_id_u');
+                if(inputpais_residencia_id) {
+                    inputpais_residencia_id.value = valorpais_residencia_id;
+                    // Cargar cascada de forma asíncrona pero secuencial
+                    cargarDepartamentos(valorpais_residencia_id, 'departamento_id_u', 'municipio_id_u', 'localidad_id_u', valordepartamento_id)
+                    .then(() => cargarMunicipios(valordepartamento_id, 'municipio_id_u', 'localidad_id_u', valormunicipio_id))
+                    .then(() => cargarLocalidades(valormunicipio_id, 'localidad_id_u', valorlocalidad_id));
                 }
-                var valorciudad = button.getAttribute('data-ciudad');
-                var inputciudad = document.getElementById('ciudad_u');
-                if(inputciudad) {
-                    if (inputciudad.type === 'checkbox') {
-                        inputciudad.checked = (valorciudad === 'activo');
-                    } else {
-                        inputciudad.value = valorciudad;
-                    }
-                }
-                var valorlocalidad = button.getAttribute('data-localidad');
-                var inputlocalidad = document.getElementById('localidad_u');
-                if(inputlocalidad) {
-                    if (inputlocalidad.type === 'checkbox') {
-                        inputlocalidad.checked = (valorlocalidad === 'activo');
-                    } else {
-                        inputlocalidad.value = valorlocalidad;
-                    }
-                }
-                var valordireccion = button.getAttribute('data-direccion');
-                var inputdireccion = document.getElementById('direccion_u');
-                if(inputdireccion) {
-                    if (inputdireccion.type === 'checkbox') {
-                        inputdireccion.checked = (valordireccion === 'activo');
-                    } else {
-                        inputdireccion.value = valordireccion;
-                    }
-                }
+                var inputzona_residencia = document.getElementById('zona_residencia_u');
+                if(inputzona_residencia) inputzona_residencia.value = valorzona_residencia;
                 var valortelefono_principal = button.getAttribute('data-telefono_principal');
                 var inputtelefono_principal = document.getElementById('telefono_principal_u');
                 if(inputtelefono_principal) {
@@ -1040,13 +1107,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                 }
                 var valoreps_id = button.getAttribute('data-eps_id');
                 var inputeps_id = document.getElementById('eps_id_u');
-                if(inputeps_id) {
-                    if (inputeps_id.type === 'checkbox') {
-                        inputeps_id.checked = (valoreps_id === 'activo');
-                    } else {
-                        inputeps_id.value = valoreps_id;
-                    }
-                }
+                if(inputeps_id) inputeps_id.value = valoreps_id;
+
+                var valorid_regimen = button.getAttribute('data-id_regimen');
+                var inputid_regimen = document.getElementById('id_regimen_u');
+                if(inputid_regimen) inputid_regimen.value = valorid_regimen;
+
+                var valorid_tipo_usuario = button.getAttribute('data-id_tipo_usuario');
+                var inputid_tipo_usuario = document.getElementById('id_tipo_usuario_u');
+                if(inputid_tipo_usuario) inputid_tipo_usuario.value = valorid_tipo_usuario;
                 var valorocupacion_id = button.getAttribute('data-ocupacion_id');
                 var inputocupacion_id = document.getElementById('ocupacion_id_u');
                 if(inputocupacion_id) {
@@ -1181,7 +1250,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formActualizar').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch('../controladores/controlador_pacientes.php?action=actualizar', {
+                fetch(`${CONTROLLER_URL}?action=actualizar`, {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -1220,9 +1289,136 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             }
         });
 
+        // Configuración dinámica de la URL del controlador
+        <?php
+            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'];
+            $uri = $_SERVER['PHP_SELF'];
+            $project_name = 'OpticaHogar';
+            $base_pos = strpos($uri, $project_name);
+            if ($base_pos !== false) {
+                $project_url = substr($uri, 0, $base_pos + strlen($project_name)) . '/';
+            } else {
+                $project_url = '/OpticaHogar/';
+            }
+            $controllerUrl = $project_url . 'controladores/controlador_pacientes.php';
+        ?>
+        const CONTROLLER_URL = '<?php echo $controllerUrl; ?>';
+        const CONTROLLER_ANAMNESIS_URL = '<?php echo $project_url; ?>controladores/controlador_anamnesis.php';
+
+        async function cargarDepartamentos(idPais, targetId, child1, child2, valSel = null) {
+            console.log(`Cargando departamentos para pais: ${idPais}, target: ${targetId}, valSel: ${valSel}`);
+            const target = document.getElementById(targetId);
+            const c1 = document.getElementById(child1);
+            const c2 = document.getElementById(child2);
+            target.innerHTML = '<option value="">-- Seleccionar --</option>';
+            if(c1) c1.innerHTML = '<option value="">-- Seleccionar --</option>';
+            if(c2) c2.innerHTML = '<option value="">-- Seleccionar --</option>';
+            
+            if(!idPais) {
+                console.warn("idPais vacío, abortando carga de departamentos");
+                return;
+            }
+
+            try {
+                const url = `${CONTROLLER_URL}?action=getDepartamentos&id_pais=${idPais}`;
+                console.log(`Fetch URL: ${url}`);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log(`Datos recibidos (depto):`, data);
+                data.forEach((item, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.texto;
+                    if(valSel) {
+                        if(item.id == valSel) opt.selected = true;
+                    } else if (index === 0) {
+                        opt.selected = true;
+                    }
+                    target.appendChild(opt);
+                });
+                // Si no hay valor predefinido y hay datos, disparar el siguiente nivel
+                if (!valSel && data.length > 0) {
+                    console.log(`Disparando cambio para ${targetId}`);
+                    target.dispatchEvent(new Event('change'));
+                }
+            } catch (error) { console.error('Error al cargar departamentos:', error); }
+        }
+
+        async function cargarMunicipios(idDepto, targetId, child1, valSel = null) {
+            console.log(`Cargando municipios para depto: ${idDepto}, target: ${targetId}, valSel: ${valSel}`);
+            const target = document.getElementById(targetId);
+            const c1 = document.getElementById(child1);
+            target.innerHTML = '<option value="">-- Seleccionar --</option>';
+            if(c1) c1.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+            if(!idDepto) return;
+
+            try {
+                const url = `${CONTROLLER_URL}?action=getMunicipios&id_departamento=${idDepto}`;
+                console.log(`Fetch URL: ${url}`);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log(`Datos recibidos (mun):`, data);
+                data.forEach((item, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.texto;
+                    if(valSel) {
+                        if(item.id == valSel) opt.selected = true;
+                    } else if (index === 0) {
+                        opt.selected = true;
+                    }
+                    target.appendChild(opt);
+                });
+                if (!valSel && data.length > 0) {
+                    console.log(`Disparando cambio para ${targetId}`);
+                    target.dispatchEvent(new Event('change'));
+                }
+            } catch (error) { console.error('Error al cargar municipios:', error); }
+        }
+
+        async function cargarLocalidades(idMun, targetId, valSel = null) {
+            console.log(`Cargando localidades para mun: ${idMun}, target: ${targetId}, valSel: ${valSel}`);
+            const target = document.getElementById(targetId);
+            target.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+            if(!idMun) return;
+
+            try {
+                const url = `${CONTROLLER_URL}?action=getLocalidades&id_municipio=${idMun}`;
+                console.log(`Fetch URL: ${url}`);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log(`Datos recibidos (loc):`, data);
+                data.forEach((item, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.texto;
+                    if(valSel) {
+                        if(item.id == valSel) opt.selected = true;
+                    } else if (index === 0) {
+                        opt.selected = true;
+                    }
+                    target.appendChild(opt);
+                });
+            } catch (error) { console.error('Error al cargar localidades:', error); }
+        }
+
+        // Inicializar cascada para formulario nuevo con un pequeño delay
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const paisNuevo = document.getElementById('pais_residencia_id');
+                console.log("Iniciando auto-cascada. Pais detectado:", paisNuevo ? paisNuevo.value : 'no existe');
+                if (paisNuevo && paisNuevo.value) {
+                    cargarDepartamentos(paisNuevo.value, 'departamento_id', 'municipio_id', 'localidad_id');
+                }
+            }, 300);
+        });
+
         function eliminar(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
-                fetch('../controladores/controlador_pacientes.php?action=eliminar', {
+                fetch(`${CONTROLLER_URL}?action=eliminar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1251,7 +1447,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 
         function eliminarAnamnesis(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este registro de anamnesis?')) {
-                fetch('../controladores/controlador_anamnesis.php?action=eliminar', {
+                fetch(`${CONTROLLER_ANAMNESIS_URL}?action=eliminar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',

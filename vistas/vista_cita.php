@@ -84,6 +84,7 @@ endif;
                                                 document.getElementById('doc_paciente').textContent = '<?= htmlspecialchars($p_doc) ?>';
                                                 document.getElementById('tel_paciente').textContent = '<?= htmlspecialchars($p_tel ?? 'No registrado') ?>';
                                                 document.getElementById('edad_paciente').textContent = '<?= htmlspecialchars($p_edad ?? 'No registrada') ?>';
+                                                document.getElementById('dir_paciente').textContent = '<?= htmlspecialchars($paciente_precargado['localidad'] ?? '') ?>';
                                             });
                                         </script>
                                     <?php endif; ?>
@@ -92,7 +93,8 @@ endif;
                                             <h6 class="card-title mb-2" id="nombre_paciente"></h6>
                                             <p class="small mb-1"><strong>Documento:</strong> <span id="doc_paciente"></span></p>
                                             <p class="small mb-1"><strong>Teléfono:</strong> <span id="tel_paciente"></span></p>
-                                            <p class="small mb-0"><strong>Edad:</strong> <span id="edad_paciente"></span></p>
+                                            <p class="small mb-1"><strong>Edad:</strong> <span id="edad_paciente"></span></p>
+                                            <p class="small mb-0"><strong>Ubicación:</strong> <span id="dir_paciente"></span></p>
                                         </div>
                                     </div>
                                 </div>
@@ -116,6 +118,34 @@ endif;
                                 </select>
                             </div>
                             <div class="col-md-12"><label>Motivo de Consulta</label><textarea name="motivo_consulta" class="form-control" rows="2"><?= isset($cita) ? htmlspecialchars($cita['motivo_consulta'] ?? '') : '' ?></textarea></div>
+                            <div class="col-md-6 mt-2">
+                                <label>Causa Externa</label>
+                                <select name="causa_externa_id" class="form-select">
+                                    <?php if (isset($causasExternas) && is_array($causasExternas)): ?>
+                                        <?php foreach ($causasExternas as $ce): 
+                                            $selected = '';
+                                            if (isset($cita) && $cita['causa_externa_id'] == $ce['id']) $selected = 'selected';
+                                            else if (!isset($cita) && isset($default_causa_externa_id) && $default_causa_externa_id == $ce['id']) $selected = 'selected';
+                                        ?>
+                                            <option value="<?= $ce['id'] ?>" <?= $selected ?>><?= htmlspecialchars($ce['nombre']) ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mt-2">
+                                <label>Finalidad de Consulta</label>
+                                <select name="finalidad_consulta_id" class="form-select">
+                                    <?php if (isset($finalidadesConsulta) && is_array($finalidadesConsulta)): ?>
+                                        <?php foreach ($finalidadesConsulta as $fc): 
+                                            $selected = '';
+                                            if (isset($cita) && $cita['finalidad_consulta_id'] == $fc['id']) $selected = 'selected';
+                                            else if (!isset($cita) && isset($default_finalidad_consulta_id) && $default_finalidad_consulta_id == $fc['id']) $selected = 'selected';
+                                        ?>
+                                            <option value="<?= $fc['id'] ?>" <?= $selected ?>><?= htmlspecialchars($fc['nombre']) ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -460,6 +490,29 @@ endif;
                 </h2>
                 <div id="sec7" class="accordion-collapse collapse" data-bs-parent="#citaAccordion">
                     <div class="accordion-body section-content">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label>Valor Consulta</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" id="valor_consulta" name="valor_consulta" class="form-control" pattern="[0-9.]*" inputmode="numeric" value="<?= isset($cita) ? number_format((int)($cita['valor_consulta'] ?? 0), 0, ',', '.') : '0' ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Cuota Moderadora</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" id="valor_cuota_moderadora" name="valor_cuota_moderadora" class="form-control" pattern="[0-9.]*" inputmode="numeric" value="<?= isset($cita) ? number_format((int)($cita['valor_cuota_moderadora'] ?? 0), 0, ',', '.') : '0' ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Neto a Pagar</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" id="valor_neto_pagar" name="valor_neto_pagar" class="form-control" value="<?= isset($cita) ? number_format((int)($cita['valor_neto_pagar'] ?? 0), 0, ',', '.') : '0' ?>" readonly style="background-color: #e9ecef;">
+                                </div>
+                            </div>
+                        </div>
                         <div class="row g-3 mb-4 align-items-center">
                             <div class="col-md-5">
                                 <label class="form-label fw-bold">Profesional que atiende</label>
@@ -570,6 +623,7 @@ inputBuscar.addEventListener('input', function() {
                         docPaciente.textContent = p.documento;
                         telPaciente.textContent = p.telefono || 'No registrado';
                         edadPaciente.textContent = p.edad || 'No disponible';
+                        document.getElementById('dir_paciente').textContent = p.localidad || 'S/D';
                         infoPaciente.style.display = 'block';
                         sugerencias.style.display = 'none';
                         inputBuscar.value = p.texto;
@@ -704,6 +758,11 @@ document.addEventListener('click', e => {
             inputBuscarCIE10.value = cie10Codigo + ' - ' + cie10Descripcion;
             infoCIE10.style.display = 'block';
         }
+
+        const pLoc = <?= isset($cita['paciente_localidad']) ? json_encode($cita['paciente_localidad']) : 'null' ?>;
+        if (pLoc) {
+            document.getElementById('dir_paciente').textContent = pLoc;
+        }
     });
 
     // Deshabilitar formulario si la cita está bloqueada por su estado
@@ -820,6 +879,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // formCita.addEventListener('change', ejecutarAutoguardado);
 
     <?php endif; ?>
+});
+
+// Lógica de cálculo automático de Valor Neto (Independiente)
+document.addEventListener('DOMContentLoaded', function() {
+    const inputConsulta = document.getElementById('valor_consulta');
+    const inputCuota = document.getElementById('valor_cuota_moderadora');
+    const inputNeto = document.getElementById('valor_neto_pagar');
+
+    function calcularNeto() {
+        const consulta = parseInt(inputConsulta.value.replace(/\./g, '')) || 0;
+        const cuota = parseInt(inputCuota.value.replace(/\./g, '')) || 0;
+        const neto = consulta - cuota;
+        inputNeto.value = neto.toLocaleString('es-CO');
+    }
+
+    function formatearMiles(input) {
+        const valor = parseInt(input.value.replace(/\./g, '')) || 0;
+        input.value = valor.toLocaleString('es-CO');
+    }
+
+    if (inputConsulta && inputCuota && inputNeto) {
+        inputConsulta.addEventListener('input', calcularNeto);
+        inputCuota.addEventListener('input', calcularNeto);
+        
+        // Formatear con separador de miles al perder el foco
+        inputConsulta.addEventListener('blur', () => formatearMiles(inputConsulta));
+        inputCuota.addEventListener('blur', () => formatearMiles(inputCuota));
+        
+        // Ejecutar de una vez por si ya hay valores cargados (edición)
+        formatearMiles(inputConsulta);
+        formatearMiles(inputCuota);
+        calcularNeto();
+    }
 });
 </script>
 </body>

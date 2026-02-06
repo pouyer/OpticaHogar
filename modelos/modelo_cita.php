@@ -91,8 +91,10 @@ class ModeloCita {
                     CONCAT(p.primer_nombre, ' ', COALESCE(p.segundo_nombre,''), ' ', p.primer_apellido, ' ', COALESCE(p.segundo_apellido,'')) AS nombre_completo,
                     p.identificacion AS documento,
                     p.telefono_principal AS telefono,
-                    f_anos(p.fecha_nacimiento) AS edad_texto
+                    f_anos(p.fecha_nacimiento) AS edad_texto,
+                    l.Nombre as localidad
                 FROM pacientes p
+                LEFT JOIN localidad l ON p.localidad_id = l.id
                 WHERE p.identificacion LIKE ?
                    OR CONCAT(p.primer_nombre, ' ', p.primer_apellido) LIKE ?
                    OR CAST(p.id AS CHAR) LIKE ?
@@ -202,6 +204,34 @@ class ModeloCita {
         return $tipos;
     }
 
+    public function getCausasExternas() {
+        $sql = "SELECT id, nombre FROM causa_externa WHERE estado = 'activo' ORDER BY campo_ordenamiento, nombre";
+        $resultado = $this->conexion->query($sql);
+        $causas = [];
+        if ($resultado) {
+            while ($row = $resultado->fetch_assoc()) {
+                $causas[] = $row;
+            }
+        } else {
+            error_log("Error en getCausasExternas: " . $this->conexion->error);
+        }
+        return $causas;
+    }
+
+    public function getFinalidadesConsulta() {
+        $sql = "SELECT id, nombre FROM finalidad_consulta WHERE estado = 'activo' ORDER BY campo_ordenamiento, nombre";
+        $resultado = $this->conexion->query($sql);
+        $finalidades = [];
+        if ($resultado) {
+            while ($row = $resultado->fetch_assoc()) {
+                $finalidades[] = $row;
+            }
+        } else {
+            error_log("Error en getFinalidadesConsulta: " . $this->conexion->error);
+        }
+        return $finalidades;
+    }
+
     public function getEstadosCita() {
         $sql = "SELECT id, nombre, color, bloquea_registro FROM estados_cita WHERE estado = 'activo' ORDER BY orden , nombre";
         $resultado = $this->conexion->query($sql);
@@ -289,7 +319,7 @@ class ModeloCita {
             'filtro_color', 'proximo_control', 'proximo_control_motivo', 'origen_enfermedad',
             'fecha_inicio_sintomas', 'diagnostico_principal', 'diagnostico_secundario',
             'tratamiento', 'medicamentos_prescritos', 'recomendaciones',
-            'observaciones_generales'
+            'observaciones_generales', 'valor_consulta', 'valor_cuota_moderadora', 'valor_neto_pagar'
         ];
 
         // Pre-procesar fechas opcionales para evitar error de Incorrect date value: ''
@@ -316,7 +346,9 @@ class ModeloCita {
             'lentes_material_id' => 'i',
             'uso_lentes_id' => 'i',
             'tipo_origen_id' => 'i',
-            'cie10_id' => 'i'
+            'cie10_id' => 'i',
+            'causa_externa_id' => 'i',
+            'finalidad_consulta_id' => 'i'
         ];
 
         foreach ($camposNullables as $campo => $tipo) {
@@ -352,6 +384,7 @@ class ModeloCita {
                        CONCAT(p.primer_nombre, ' ', COALESCE(p.segundo_nombre,''), ' ', p.primer_apellido, ' ', COALESCE(p.segundo_apellido,'')) AS paciente_nombre,
                        p.telefono_principal AS paciente_telefono,
                        f_anos(p.fecha_nacimiento) AS paciente_edad,
+                       l.Nombre as paciente_localidad,
                        CONCAT(ps.primer_nombre, ' ', COALESCE(ps.segundo_nombre,''), ' ', ps.primer_apellido, ' ', COALESCE(ps.segundo_apellido,'')) AS profesional_nombre,
                        d.codigo AS cie10_codigo,
                        d.descripcion AS cie10_descripcion,
@@ -360,6 +393,7 @@ class ModeloCita {
                        ps.registro_profesional
                 FROM citas_control cc
                 JOIN pacientes p ON cc.paciente_id = p.id
+                LEFT JOIN localidad l ON p.localidad_id = l.id
                 JOIN profesionales_salud ps ON cc.profesional_id = ps.id
                 JOIN estados_cita e ON cc.estado_cita_id = e.id
                 LEFT JOIN diagnosticos_cie10 d ON cc.cie10_id = d.id
@@ -556,7 +590,7 @@ class ModeloCita {
             'filtro_color', 'proximo_control', 'proximo_control_motivo', 'origen_enfermedad',
             'fecha_inicio_sintomas', 'diagnostico_principal', 'diagnostico_secundario',
             'tratamiento', 'medicamentos_prescritos', 'recomendaciones',
-            'observaciones_generales'
+            'observaciones_generales', 'valor_consulta', 'valor_cuota_moderadora', 'valor_neto_pagar'
         ];
 
         // Pre-procesar fechas opcionales
@@ -582,7 +616,9 @@ class ModeloCita {
             'lentes_material_id' => 'i',
             'uso_lentes_id' => 'i',
             'tipo_origen_id' => 'i',
-            'cie10_id' => 'i'
+            'cie10_id' => 'i',
+            'causa_externa_id' => 'i',
+            'finalidad_consulta_id' => 'i'
         ];
 
         foreach ($camposNullables as $campo => $tipo) {

@@ -37,7 +37,8 @@ foreach ($resultados as $p) {
         'nombre_completo' => trim($p['nombre_completo']),
         'documento'       => $p['documento'],
         'telefono'        => $p['telefono'] ?? '',
-        'edad'            => $p['edad_texto'] ?? 'No disponible'
+        'edad'            => $p['edad_texto'] ?? 'No disponible',
+        'localidad'       => $p['localidad'] ?? ''
     ];
 }
 

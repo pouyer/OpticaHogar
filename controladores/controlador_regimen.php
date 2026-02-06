@@ -1,12 +1,12 @@
 <?php
-require_once '../modelos/modelo_paises.php';
+require_once '../modelos/modelo_regimen.php';
 if (file_exists('../modelos/modelo_acc_log.php')) {
     require_once '../modelos/modelo_acc_log.php';
 } elseif (file_exists('../accesos/modelos/modelo_acc_log.php')) {
     require_once '../accesos/modelos/modelo_acc_log.php';
 }
 
-class ControladorPaises {
+class ControladorRegimen {
     private $modelo;
     private $modeloLog;
     private $es_vista;
@@ -16,12 +16,12 @@ class ControladorPaises {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        $this->modelo = new ModeloPaises();
+        $this->modelo = new ModeloRegimen();
         $this->modeloLog = new ModeloAcc_log();
         $this->es_vista = false;
         
         // Cargar permisos
-        $this->permisos = $_SESSION['permisos']['vista_paises.php'] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
+        $this->permisos = $_SESSION['permisos']['vista_regimen.php'] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
     }
 
     private function verificarPermiso($clave) {
@@ -37,7 +37,7 @@ class ControladorPaises {
         $this->verificarPermiso('ins');
         $resultado = $this->modelo->crear($datos);
         if ($resultado) {
-            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'CREATE', 'paises', 'Nuevo registro creado');
+            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'CREATE', 'regimen', 'Nuevo registro creado');
         }
         return $resultado;
     }
@@ -47,7 +47,7 @@ class ControladorPaises {
         $this->verificarPermiso('upd');
         $resultado = $this->modelo->actualizar($id, $datos);
         if ($resultado) {
-            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'UPDATE', 'paises', 'Registro actualizado ID: ' . $id);
+            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'UPDATE', 'regimen', 'Registro actualizado ID: ' . $id);
         }
         return $resultado;
     }
@@ -57,7 +57,7 @@ class ControladorPaises {
         $this->verificarPermiso('del');
         $resultado = $this->modelo->eliminar($id);
         if ($resultado) {
-            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'DELETE', 'paises', 'Registro eliminado ID: ' . $id);
+            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'DELETE', 'regimen', 'Registro eliminado ID: ' . $id);
         }
         return $resultado;
     }
@@ -105,7 +105,7 @@ class ControladorPaises {
                 $logMsg .= " (Búsqueda general: $termino)";
             }
             
-            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'EXPORT', 'paises', $logMsg);
+            $this->modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'EXPORT', 'regimen', $logMsg);
             
             $datos = $this->modelo->exportarDatos($termino, $campo);
             if ($datos === false) {
@@ -116,7 +116,7 @@ class ControladorPaises {
             }
 
             $timestamp = date('Y-m-d_H-i-s');
-            $filename = "paises_export_{$timestamp}";
+            $filename = "regimen_export_{$timestamp}";
             if (!empty($termino)) {
                 $filename .= "_busqueda_" . preg_replace('/[^a-zA-Z0-9]/', '_', $termino);
             }
@@ -192,13 +192,13 @@ class ControladorPaises {
 
 // Manejo de las acciones
 $accion = $_GET['action'] ?? '';
-$controlador = new ControladorPaises();
+$controlador = new ControladorRegimen();
 
 switch ($accion) {
     case 'crear':
         $datos = $_POST;
         // Inyección automática de Auditoría de Usuario (Insert)
-                                                                                                                                                                                $datos['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
+                                                                                                                                        $datos['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
                                                                     $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
                                                 $resultado = $controlador->crear($datos);
         echo json_encode($resultado);
@@ -208,7 +208,7 @@ switch ($accion) {
         $id = $_POST['id']; // Usar el campo de llave primaria
         $datos = $_POST;
         // Inyección automática de Auditoría de Usuario (Update)
-                                                                                                                                                                                                                        $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
+                                                                                                                                                                                $datos['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
                                                 unset($datos['id']); // Eliminar el ID de los datos
         $resultado = $controlador->actualizar($id, $datos);
         echo json_encode($resultado);
@@ -237,7 +237,7 @@ switch ($accion) {
         
         $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
         // Aquí debes incluir la vista con los resultados
-        include '../vistas/vista_paises.php';
+        include '../vistas/vista_regimen.php';
         break;
 
     case 'exportar':
@@ -252,6 +252,6 @@ switch ($accion) {
         $dir = $_GET['dir'] ?? 'DESC';
         $offset = ($paginaActual - 1) * $registrosPorPagina;
         $registros = $controlador->obtenerTodos($registrosPorPagina, $paginaActual, $sort, $dir);
-        include '../vistas/vista_paises.php';
+        include '../vistas/vista_regimen.php';
         break;
 }

@@ -1,0 +1,280 @@
+--- ESTRUCTURA PAISES ---
+Array
+(
+    [Field] => id
+    [Type] => int(11)
+    [Null] => NO
+    [Key] => PRI
+    [Default] => 
+    [Extra] => auto_increment
+)
+Array
+(
+    [Field] => codigo_dane
+    [Type] => varchar(5)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => codigo_pais
+    [Type] => varchar(10)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => indicativo
+    [Type] => varchar(10)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => nombre_pais
+    [Type] => varchar(100)
+    [Null] => NO
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => campo_ordenamiento
+    [Type] => int(11)
+    [Null] => YES
+    [Key] => 
+    [Default] => 0
+    [Extra] => 
+)
+Array
+(
+    [Field] => estado
+    [Type] => enum('activo','inactivo')
+    [Null] => YES
+    [Key] => 
+    [Default] => activo
+    [Extra] => 
+)
+Array
+(
+    [Field] => usuario_id_inserto
+    [Type] => int(11)
+    [Null] => NO
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => fecha_insercion
+    [Type] => timestamp
+    [Null] => YES
+    [Key] => 
+    [Default] => current_timestamp()
+    [Extra] => 
+)
+Array
+(
+    [Field] => usuario_id_actualizo
+    [Type] => int(11)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => fecha_actualizacion
+    [Type] => timestamp
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => on update current_timestamp()
+)
+
+--- ESTRUCTURA DEPARTAMENTO ---
+Array
+(
+    [Field] => id
+    [Type] => int(11)
+    [Null] => NO
+    [Key] => PRI
+    [Default] => 
+    [Extra] => auto_increment
+)
+Array
+(
+    [Field] => id_pais
+    [Type] => int(11)
+    [Null] => YES
+    [Key] => MUL
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => codigo_dane
+    [Type] => varchar(10)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => Nombre
+    [Type] => varchar(100)
+    [Null] => NO
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => campo_ordenamiento
+    [Type] => int(11)
+    [Null] => YES
+    [Key] => 
+    [Default] => 0
+    [Extra] => 
+)
+Array
+(
+    [Field] => estado
+    [Type] => enum('activo','inactivo')
+    [Null] => YES
+    [Key] => 
+    [Default] => activo
+    [Extra] => 
+)
+Array
+(
+    [Field] => usuario_id_inserto
+    [Type] => int(11)
+    [Null] => NO
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => fecha_insercion
+    [Type] => timestamp
+    [Null] => YES
+    [Key] => 
+    [Default] => current_timestamp()
+    [Extra] => 
+)
+Array
+(
+    [Field] => usuario_id_actualizo
+    [Type] => int(11)
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => 
+)
+Array
+(
+    [Field] => fecha_actualizacion
+    [Type] => timestamp
+    [Null] => YES
+    [Key] => 
+    [Default] => 
+    [Extra] => on update current_timestamp()
+)
+
+--- PAISES (Colombia) ---
+Array
+(
+    [id] => 44
+    [codigo_dane] => 170
+    [codigo_pais] => COL
+    [indicativo] => +57
+    [nombre_pais] => Colombia
+    [campo_ordenamiento] => 1
+    [estado] => activo
+    [usuario_id_inserto] => 1
+    [fecha_insercion] => 2026-01-26 20:06:11
+    [usuario_id_actualizo] => 
+    [fecha_actualizacion] => 2026-02-04 19:19:30
+)
+
+--- DEPARTAMENTOS (Estado para ID 44) ---
+Array
+(
+    [id] => 1
+    [id_pais] => 44
+    [Nombre] => NO APLICA
+    [estado] => activo
+)
+Array
+(
+    [id] => 2
+    [id_pais] => 44
+    [Nombre] => ANTIOQUIA
+    [estado] => activo
+)
+Array
+(
+    [id] => 3
+    [id_pais] => 44
+    [Nombre] => ATLÁNTICO
+    [estado] => activo
+)
+Array
+(
+    [id] => 4
+    [id_pais] => 44
+    [Nombre] => BOGOTÁ, D.C.
+    [estado] => activo
+)
+Array
+(
+    [id] => 5
+    [id_pais] => 44
+    [Nombre] => BOLÍVAR
+    [estado] => activo
+)
+Array
+(
+    [id] => 6
+    [id_pais] => 44
+    [Nombre] => BOYACÁ
+    [estado] => activo
+)
+Array
+(
+    [id] => 7
+    [id_pais] => 44
+    [Nombre] => CALDAS
+    [estado] => activo
+)
+Array
+(
+    [id] => 8
+    [id_pais] => 44
+    [Nombre] => CAQUETÁ
+    [estado] => activo
+)
+Array
+(
+    [id] => 9
+    [id_pais] => 44
+    [Nombre] => CAUCA
+    [estado] => activo
+)
+Array
+(
+    [id] => 10
+    [id_pais] => 44
+    [Nombre] => CESAR
+    [estado] => activo
+)

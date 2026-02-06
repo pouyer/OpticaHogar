@@ -1,5 +1,5 @@
 -- Agregar campo bloquea_registro a la tabla estados_cita
-ALTER TABLE estados_cita ADD COLUMN bloquea_registro TINYINT(1) DEFAULT 0 AFTER color;
+ALTER TABLE estados_cita ADD COLUMN bloquea_registro boolean DEFAULT 0 AFTER color;
 
 -- Actualizar estados que deben bloquear el registro (Finalizado y Cancelado)
 -- ID 2 suele ser REALIZADA/FINALIZADO según modelo_cita.php

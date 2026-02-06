@@ -5,7 +5,7 @@
 require_once '../accesos/verificar_sesion.php';
 
 // Cargar permisos para este programa
-$mi_programa = 'vista_paises.php'; // Debe coincidir con el nombre_archivo en acc_programa
+$mi_programa = 'vista_regimen.php'; // Debe coincidir con el nombre_archivo en acc_programa
 $permisos = $_SESSION['permisos'][$mi_programa] ?? ['ins' => 0, 'upd' => 0, 'del' => 0, 'exp' => 0];
 
 $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
@@ -16,7 +16,7 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paises</title>
+    <title>Regimen</title>
 
     <?php include('../headIconos.php'); ?>
     <link rel="stylesheet" href="../css/estilos.css">
@@ -47,7 +47,7 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
         <div class="main-card">
             <div class="card-header-custom d-flex justify-content-between align-items-center">
                 <div>
-                    <h3 class="mb-0"><i class="icon-table me-2"></i> Paises</h3>
+                    <h3 class="mb-0"><i class="icon-table me-2"></i> Regimen</h3>
                     <small class="opacity-75">Gestión de Registros</small>
                 </div>
                 <div class="d-flex gap-2">
@@ -57,10 +57,10 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
                             <i class="icon-export me-1"></i> Exportar
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="../controladores/controlador_paises.php?action=exportar&formato=excel&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-excel text-success me-2"></i> Excel</a></li>
-                            <li><a class="dropdown-item" href="../controladores/controlador_paises.php?action=exportar&formato=csv&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-text text-primary me-2"></i> CSV</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_regimen.php?action=exportar&formato=excel&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-excel text-success me-2"></i> Excel</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_regimen.php?action=exportar&formato=csv&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-file-text text-primary me-2"></i> CSV</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../controladores/controlador_paises.php?action=exportar&formato=txt&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-doc-text-inv text-secondary me-2"></i> TXT</a></li>
+                            <li><a class="dropdown-item" href="../controladores/controlador_regimen.php?action=exportar&formato=txt&busqueda=<?php echo isset($_GET['busqueda']) ? urlencode($_GET['busqueda']) : ''; ?>&campo=<?php echo isset($_GET['campo']) ? urlencode($_GET['campo']) : ''; ?>"><i class="icon-doc-text-inv text-secondary me-2"></i> TXT</a></li>
                         </ul>
                     </div>
                     <?php endif; ?>
@@ -75,14 +75,14 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 
             <div class="card-body p-4">
                 <!-- Buscador -->
-                <form method="GET" action="vista_paises.php" class="mb-4">
+                <form method="GET" action="vista_regimen.php" class="mb-4">
                     <div class="input-group">
                         <input type="text" name="busqueda" class="form-control search-box p-2" placeholder="Buscar por cualquier campo..." value="<?php echo isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : ''; ?>">
                         <input type="hidden" name="action" value="buscar">
                         <input type="hidden" name="registrosPorPagina" value="<?= $registrosPorPagina ?>">
                         <button type="submit" class="btn search-btn px-4"><i class="icon-search"></i></button>
                         <?php if(isset($_GET['busqueda']) && $_GET['busqueda'] !== ''): ?>
-                            <a href="vista_paises.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
+                            <a href="vista_regimen.php" class="btn btn-outline-danger d-flex align-items-center"><i class="icon-cancel"></i></a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -97,38 +97,28 @@ $dir = $_GET['dir'] ?? 'DESC';
 $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 ?>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`id`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        id                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`id`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`regimen`.`id`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        id                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`regimen`.`id`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`codigo_pais`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        codigo_pais                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`codigo_pais`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`regimen`.`codigo`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        codigo                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`regimen`.`codigo`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`codigo_dane`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        codigo_dane                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`codigo_dane`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`regimen`.`nombre`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        nombre                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`regimen`.`nombre`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`nombre_pais`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        nombre_pais                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`nombre_pais`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`regimen`.`campo_ordenamiento`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        campo_ordenamiento                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`regimen`.`campo_ordenamiento`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`indicativo`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        indicativo                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`indicativo`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
-                                        <?php endif; ?>                                    </a>
-                                </th>
-                                <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`campo_ordenamiento`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        campo_ordenamiento                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`campo_ordenamiento`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
-                                        <?php endif; ?>                                    </a>
-                                </th>
-                                <th>
-                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`paises`.`estado`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
-                                        estado                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`paises`.`estado`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
+                                    <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => "`regimen`.`estado`", 'dir' => $nextDir])); ?>" class="text-decoration-none text-muted">
+                                        estado                                        <?php if (str_replace(['`',' '], '', $sort) === str_replace(['`',' '], '', "`regimen`.`estado`")): ?>                                            <i class="icon-<?php echo ($dir === 'ASC') ? 'up-dir' : 'down-dir'; ?> ms-1"></i>
                                         <?php endif; ?>                                    </a>
                                 </th>
                                 <th class="text-center">Acciones</th>
@@ -136,15 +126,15 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         </thead>
                         <tbody>
                             <?php
-                            require_once '../modelos/modelo_paises.php';
+                            require_once '../modelos/modelo_regimen.php';
                             if (file_exists('../modelos/modelo_acc_log.php')) {
                                 require_once '../modelos/modelo_acc_log.php';
                             } elseif (file_exists('../accesos/modelos/modelo_acc_log.php')) {
                                 require_once '../accesos/modelos/modelo_acc_log.php';
                             }
-                            $modelo = new ModeloPaises();
+                            $modelo = new ModeloRegimen();
                             $modeloLog = new ModeloAcc_log();
-                            $modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'VIEW', 'paises', 'Acceso a la pantalla de listado');
+                            $modeloLog->registrar($_SESSION['usuario_id'] ?? 0, 'VIEW', 'regimen', 'Acceso a la pantalla de listado');
                             $termino = $_GET['busqueda'] ?? '';
                             $campoFiltro = $_GET['campo'] ?? '';
                             $registrosPorPagina = isset($_GET['registrosPorPagina']) ? (int)$_GET['registrosPorPagina'] : 15;
@@ -171,10 +161,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                             ?>
                 <tr>
                     <td><?php echo htmlspecialchars($registro['id']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['codigo_pais']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['codigo_dane']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['nombre_pais']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['indicativo']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['codigo']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['nombre']); ?></td>
                     <td><?php echo htmlspecialchars($registro['campo_ordenamiento']); ?></td>
                     <td><?php $isChecked = ($registro['estado'] == 'activo') ? 'checked' : ''; ?><div class="form-check form-switch d-flex justify-content-center ps-0"><input class="form-check-input" type="checkbox" disabled <?php echo $isChecked; ?>></div></td>
                     <td class="text-center">
@@ -182,10 +170,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         <?php if ($permisos['upd']): ?>
                         <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalActualizar" data-idActualizar="<?php echo $registro['id']; ?>"
                            data-id="<?php echo htmlspecialchars($registro['id']); ?>"
-                           data-codigo_pais="<?php echo htmlspecialchars($registro['codigo_pais']); ?>"
-                           data-codigo_dane="<?php echo htmlspecialchars($registro['codigo_dane']); ?>"
-                           data-nombre_pais="<?php echo htmlspecialchars($registro['nombre_pais']); ?>"
-                           data-indicativo="<?php echo htmlspecialchars($registro['indicativo']); ?>"
+                           data-codigo="<?php echo htmlspecialchars($registro['codigo']); ?>"
+                           data-nombre="<?php echo htmlspecialchars($registro['nombre']); ?>"
                            data-campo_ordenamiento="<?php echo htmlspecialchars($registro['campo_ordenamiento']); ?>"
                            data-estado="<?php echo htmlspecialchars($registro['estado']); ?>"
                            data-usuario_id_inserto="<?php echo htmlspecialchars($registro['usuario_id_inserto']); ?>"
@@ -202,7 +188,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     </td>
                 </tr>
                 <?php endforeach; else: ?>
-                                <tr><td colspan="8">No hay registros disponibles.</td></tr>
+                                <tr><td colspan="6">No hay registros disponibles.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -248,20 +234,12 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                     <div class="modal-body p-4">
                         <form id="formCrear" method="post">
                             <div class="row">                                <div class="col-md-6 mb-3">
-                                    <label for="codigo_pais">codigo_pais:</label>
-                                    <input type="text" class="form-control" id="codigo_pais" name="codigo_pais">
+                                    <label for="codigo">codigo:</label>
+                                    <input type="text" class="form-control" id="codigo" name="codigo">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="codigo_dane">codigo_dane:</label>
-                                    <input type="text" class="form-control" id="codigo_dane" name="codigo_dane">
-                                </div>
-                            </div>                            <div class="row">                                <div class="col-md-6 mb-3">
-                                    <label for="nombre_pais">nombre_pais:</label>
-                                    <input type="text" class="form-control" id="nombre_pais" name="nombre_pais" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="indicativo">indicativo:</label>
-                                    <input type="text" class="form-control" id="indicativo" name="indicativo">
+                                    <label for="nombre">nombre:</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
                                 </div>
                             </div>                            <div class="row">                                <div class="col-md-6 mb-3">
                                     <label for="campo_ordenamiento">campo_ordenamiento:</label>
@@ -298,7 +276,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                      <div class="modal-header">
                          <div class="row">
                              <div class="form-group col-md-8">
-                               <h5 class="modal-title">Actualizar Paises - ID: </h5>
+                               <h5 class="modal-title">Actualizar Regimen - ID: </h5>
                              </div>
                              <div class="form-group col-md-3">
                                 <div class="form-group mb-0 d-flex align-items-center">
@@ -310,20 +288,12 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                          </button>
                      </div>
                             <div class="row">                                 <div class="col-md-6 mb-3">
-                                     <label for="codigo_pais">codigo_pais:</label>
-                                     <input type="text" class="form-control" id="codigo_pais" name="codigo_pais">
+                                     <label for="codigo">codigo:</label>
+                                     <input type="text" class="form-control" id="codigo" name="codigo">
                                 </div>
                                  <div class="col-md-6 mb-3">
-                                     <label for="codigo_dane">codigo_dane:</label>
-                                     <input type="text" class="form-control" id="codigo_dane" name="codigo_dane">
-                                </div>
-                            </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
-                                     <label for="nombre_pais">nombre_pais:</label>
-                                     <input type="text" class="form-control" id="nombre_pais" name="nombre_pais" required>
-                                </div>
-                                 <div class="col-md-6 mb-3">
-                                     <label for="indicativo">indicativo:</label>
-                                     <input type="text" class="form-control" id="indicativo" name="indicativo">
+                                     <label for="nombre">nombre:</label>
+                                     <input type="text" class="form-control" id="nombre" name="nombre" required>
                                 </div>
                             </div>                            <div class="row">                                 <div class="col-md-6 mb-3">
                                      <label for="campo_ordenamiento">campo_ordenamiento:</label>
@@ -370,7 +340,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formCrear').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch('../controladores/controlador_paises.php?action=crear', {
+                fetch('../controladores/controlador_regimen.php?action=crear', {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -410,40 +380,22 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                         inputid.value = valorid;
                     }
                 }
-                var valorcodigo_pais = button.getAttribute('data-codigo_pais');
-                var inputcodigo_pais = modal.querySelector('#codigo_pais');
-                if(inputcodigo_pais) {
-                    if (inputcodigo_pais.type === 'checkbox') {
-                        inputcodigo_pais.checked = (valorcodigo_pais === 'activo');
+                var valorcodigo = button.getAttribute('data-codigo');
+                var inputcodigo = modal.querySelector('#codigo');
+                if(inputcodigo) {
+                    if (inputcodigo.type === 'checkbox') {
+                        inputcodigo.checked = (valorcodigo === 'activo');
                     } else {
-                        inputcodigo_pais.value = valorcodigo_pais;
+                        inputcodigo.value = valorcodigo;
                     }
                 }
-                var valorcodigo_dane = button.getAttribute('data-codigo_dane');
-                var inputcodigo_dane = modal.querySelector('#codigo_dane');
-                if(inputcodigo_dane) {
-                    if (inputcodigo_dane.type === 'checkbox') {
-                        inputcodigo_dane.checked = (valorcodigo_dane === 'activo');
+                var valornombre = button.getAttribute('data-nombre');
+                var inputnombre = modal.querySelector('#nombre');
+                if(inputnombre) {
+                    if (inputnombre.type === 'checkbox') {
+                        inputnombre.checked = (valornombre === 'activo');
                     } else {
-                        inputcodigo_dane.value = valorcodigo_dane;
-                    }
-                }
-                var valornombre_pais = button.getAttribute('data-nombre_pais');
-                var inputnombre_pais = modal.querySelector('#nombre_pais');
-                if(inputnombre_pais) {
-                    if (inputnombre_pais.type === 'checkbox') {
-                        inputnombre_pais.checked = (valornombre_pais === 'activo');
-                    } else {
-                        inputnombre_pais.value = valornombre_pais;
-                    }
-                }
-                var valorindicativo = button.getAttribute('data-indicativo');
-                var inputindicativo = modal.querySelector('#indicativo');
-                if(inputindicativo) {
-                    if (inputindicativo.type === 'checkbox') {
-                        inputindicativo.checked = (valorindicativo === 'activo');
-                    } else {
-                        inputindicativo.value = valorindicativo;
+                        inputnombre.value = valornombre;
                     }
                 }
                 var valorcampo_ordenamiento = button.getAttribute('data-campo_ordenamiento');
@@ -505,7 +457,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formActualizar').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch('../controladores/controlador_paises.php?action=actualizar', {
+                fetch('../controladores/controlador_regimen.php?action=actualizar', {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -527,7 +479,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 
         function eliminar(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
-                fetch('../controladores/controlador_paises.php?action=eliminar', {
+                fetch('../controladores/controlador_regimen.php?action=eliminar', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',

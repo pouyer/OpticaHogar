@@ -26,7 +26,11 @@ class ModeloReporteHistoria {
                        o.nombre as ocupacion_nombre,
                        ec.nombre as estado_civil_nombre,
                        pa.nombre as parentesco_nombre,
-                       ep.nombre as estado_paciente_nombre
+                       ep.nombre as estado_paciente_nombre,
+                       pai.nombre_pais as pais_nombre,
+                       d.Nombre as departamento,
+                       m.Nombre as ciudad,
+                       l.Nombre as localidad
                 FROM pacientes p
                 LEFT JOIN tipos_identificacion ti ON p.tipo_identificacion_id = ti.id
                 LEFT JOIN generos g ON p.genero_id = g.id
@@ -36,6 +40,10 @@ class ModeloReporteHistoria {
                 LEFT JOIN estados_civiles ec ON p.estado_civil_id = ec.id
                 LEFT JOIN parentescos pa ON p.parentesco_id = pa.id
                 LEFT JOIN estados_paciente ep ON p.estado_paciente_id = ep.id
+                LEFT JOIN paises pai ON p.pais_residencia_id = pai.id
+                LEFT JOIN departamento d ON p.departamento_id = d.id
+                LEFT JOIN municipio m ON p.municipio_id = m.id
+                LEFT JOIN localidad l ON p.localidad_id = l.id
                 WHERE p.id = ?";
         
         $stmt = $this->conexion->prepare($sql);

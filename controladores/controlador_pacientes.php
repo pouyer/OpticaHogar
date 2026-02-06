@@ -1,14 +1,24 @@
 <?php
-require_once '../config/config.php';
-require_once '../modelos/modelo_pacientes.php';
-if (file_exists('../modelos/modelo_acc_log.php')) {
-    require_once '../modelos/modelo_acc_log.php';
-} elseif (file_exists('../accesos/modelos/modelo_acc_log.php')) {
-    require_once '../accesos/modelos/modelo_acc_log.php';
+// Definir rutas absolutas para mayor robustez
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../modelos/modelo_pacientes.php';
+
+// Cargar modelo de logs si existe en alguna de las rutas posibles
+$modelo_log_cargado = false;
+$rutas_log = [
+    __DIR__ . '/../modelos/modelo_acc_log.php',
+    __DIR__ . '/../accesos/modelos/modelo_acc_log.php'
+];
+foreach ($rutas_log as $ruta) {
+    if (file_exists($ruta)) {
+        require_once $ruta;
+        $modelo_log_cargado = true;
+        break;
+    }
 }
 
 class ControladorPacientes {
-    private $modelo;
+    public $modelo;
     private $modeloLog;
     private $es_vista;
 
@@ -18,7 +28,14 @@ class ControladorPacientes {
             session_start();
         }
         $this->modelo = new ModeloPacientes();
-        $this->modeloLog = new ModeloAcc_log();
+        
+        // Inicializar modelo de log solo si la clase existe
+        if (class_exists('ModeloAcc_log')) {
+            $this->modeloLog = new ModeloAcc_log();
+        } else {
+            $this->modeloLog = null;
+        }
+        
         $this->es_vista = false;
         
         // Cargar permisos
@@ -280,12 +297,30 @@ switch ($accion) {
         
         $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
         // Aquí debes incluir la vista con los resultados
-        include '../vistas/vista_pacientes.php';
+        include __DIR__ . '/../vistas/vista_pacientes.php';
         break;
 
     case 'exportar':
         $formato = $_GET['formato'] ?? 'excel';
         $controlador->exportar($formato);
+        break;
+
+    case 'getDepartamentos':
+        $id_pais = $_GET['id_pais'] ?? 0;
+        echo json_encode($controlador->modelo->obtenerDepartamentosPorPais($id_pais));
+        exit;
+        break;
+
+    case 'getMunicipios':
+        $id_departamento = $_GET['id_departamento'] ?? 0;
+        echo json_encode($controlador->modelo->obtenerMunicipiosPorDepto($id_departamento));
+        exit;
+        break;
+
+    case 'getLocalidades':
+        $id_municipio = $_GET['id_municipio'] ?? 0;
+        echo json_encode($controlador->modelo->obtenerLocalidadesPorMunicipio($id_municipio));
+        exit;
         break;
 
     default:
@@ -298,6 +333,6 @@ switch ($accion) {
         $registros = $controlador->obtenerTodos($registrosPorPagina, $paginaActual, $sort, $dir, $verTodos);
         $totalRegistros = $controlador->modelo->contarRegistros($verTodos);
         $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
-        include '../vistas/vista_pacientes.php';
+        include __DIR__ . '/../vistas/vista_pacientes.php';
         break;
 }

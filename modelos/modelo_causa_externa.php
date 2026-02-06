@@ -1,9 +1,9 @@
 <?php
     /**
-     * Modelo para la tabla paises     */
+     * Modelo para la tabla causa_externa     */
 require_once '../conexion.php';
 
-class ModeloPaises {
+class ModeloCausa_externa {
     private $conexion;
     private $llavePrimaria = 'id';
     private $es_vista = false;
@@ -17,7 +17,7 @@ class ModeloPaises {
 
     // Función para contar registros
     public function contarRegistros() {
-        $query = "SELECT COUNT(*) as total FROM paises";
+        $query = "SELECT COUNT(*) as total FROM causa_externa";
         $stmt = $this->conexion->prepare($query);
         $stmt->execute();
         $resultado = $stmt->get_result();
@@ -26,9 +26,9 @@ class ModeloPaises {
 
     // Función de contarRegistrosPorBusqueda
     public function contarRegistrosPorBusqueda($termino) {
-        $query = "SELECT COUNT(*) as total FROM paises ";
+        $query = "SELECT COUNT(*) as total FROM causa_externa ";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `paises`.`id`, `paises`.`codigo_dane`, `paises`.`codigo_pais`, `paises`.`indicativo`, `paises`.`nombre_pais`, `paises`.`campo_ordenamiento`, `paises`.`estado`, `paises`.`usuario_id_inserto`, `paises`.`fecha_insercion`, `paises`.`usuario_id_actualizo`, `paises`.`fecha_actualizacion`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `causa_externa`.`id`, `causa_externa`.`codigo`, `causa_externa`.`nombre`, `causa_externa`.`campo_ordenamiento`, `causa_externa`.`estado`, `causa_externa`.`usuario_id_inserto`, `causa_externa`.`fecha_insercion`, `causa_externa`.`usuario_id_actualizo`, `causa_externa`.`fecha_actualizacion`) LIKE ?";
         $stmt = $this->conexion->prepare($query);
         $termino = "%" . $termino . "%";
         $stmt->bind_param('s', $termino);
@@ -40,7 +40,7 @@ class ModeloPaises {
     // Obtener todos los registros
     public function obtenerTodos($registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas para evitar inyección SQL
-        $allowedColumns = ['`paises`.`id`', '`paises`.`codigo_dane`', '`paises`.`codigo_pais`', '`paises`.`indicativo`', '`paises`.`nombre_pais`', '`paises`.`campo_ordenamiento`', '`paises`.`estado`', '`paises`.`usuario_id_inserto`', '`paises`.`fecha_insercion`', '`paises`.`usuario_id_actualizo`', '`paises`.`fecha_actualizacion`'];
+        $allowedColumns = ['`causa_externa`.`id`', '`causa_externa`.`codigo`', '`causa_externa`.`nombre`', '`causa_externa`.`campo_ordenamiento`', '`causa_externa`.`estado`', '`causa_externa`.`usuario_id_inserto`', '`causa_externa`.`fecha_insercion`', '`causa_externa`.`usuario_id_actualizo`', '`causa_externa`.`fecha_actualizacion`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -59,10 +59,10 @@ class ModeloPaises {
 
         if (empty($orderSQL)) {
             // Usar ordenamiento predeterminado (hasta 3 niveles)
-            $orderSQL = " ORDER BY `paises`.`estado` ASC, `paises`.`campo_ordenamiento` ASC, `paises`.`nombre_pais` ASC ";
+            $orderSQL = " ORDER BY `causa_externa`.`estado` ASC, `causa_externa`.`campo_ordenamiento` ASC, `causa_externa`.`nombre` ASC ";
         }
 
-        $query = "SELECT `paises`.*  FROM paises";
+        $query = "SELECT `causa_externa`.*  FROM causa_externa";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         $stmt = $this->conexion->prepare($query);
@@ -74,8 +74,8 @@ class ModeloPaises {
 
     // Obtener un registro por llave primaria
     public function obtenerPorId($id) {
-        $query = "SELECT `paises`.*  FROM paises";
-        $query .= " WHERE `paises`.$this->llavePrimaria = ?";
+        $query = "SELECT `causa_externa`.*  FROM causa_externa";
+        $query .= " WHERE `causa_externa`.$this->llavePrimaria = ?";
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param('i', $id);
         $stmt->execute();
@@ -90,35 +90,21 @@ class ModeloPaises {
         $tipos = '';
         $params = [];
 
-        // Campo: codigo_dane
-        if (array_key_exists('codigo_dane', $datos)) {
-            $campos[] = '`codigo_dane`';
+        // Campo: codigo
+        if (array_key_exists('codigo', $datos)) {
+            $campos[] = '`codigo`';
             $valores[] = '?';
-            $params[] = ($datos['codigo_dane'] === '' || $datos['codigo_dane'] === null) ? '' : $datos['codigo_dane'];
+            $params[] = ($datos['codigo'] === '' || $datos['codigo'] === null) ? '' : $datos['codigo'];
             $tipos .= 's';
         }
-        // Campo: codigo_pais
-        if (array_key_exists('codigo_pais', $datos)) {
-            $campos[] = '`codigo_pais`';
-            $valores[] = '?';
-            $params[] = ($datos['codigo_pais'] === '' || $datos['codigo_pais'] === null) ? '' : $datos['codigo_pais'];
-            $tipos .= 's';
+        // Campo: nombre
+        if (!isset($datos['nombre']) || $datos['nombre'] === '') {
+            throw new Exception('El campo nombre es requerido.');
         }
-        // Campo: indicativo
-        if (array_key_exists('indicativo', $datos)) {
-            $campos[] = '`indicativo`';
+        if (array_key_exists('nombre', $datos)) {
+            $campos[] = '`nombre`';
             $valores[] = '?';
-            $params[] = ($datos['indicativo'] === '' || $datos['indicativo'] === null) ? '' : $datos['indicativo'];
-            $tipos .= 's';
-        }
-        // Campo: nombre_pais
-        if (!isset($datos['nombre_pais']) || $datos['nombre_pais'] === '') {
-            throw new Exception('El campo nombre_pais es requerido.');
-        }
-        if (array_key_exists('nombre_pais', $datos)) {
-            $campos[] = '`nombre_pais`';
-            $valores[] = '?';
-            $params[] = ($datos['nombre_pais'] === '' || $datos['nombre_pais'] === null) ? '' : $datos['nombre_pais'];
+            $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
             $tipos .= 's';
         }
         // Campo: campo_ordenamiento
@@ -157,7 +143,7 @@ class ModeloPaises {
             $tipos .= 's';
         }
 
-        $query = "INSERT INTO paises (" . implode(', ', $campos) . ") VALUES (" . implode(', ', $valores) . ")";
+        $query = "INSERT INTO causa_externa (" . implode(', ', $campos) . ") VALUES (" . implode(', ', $valores) . ")";
         $stmt = $this->conexion->prepare($query);
         if (!empty($params)) {
              if(!$stmt) throw new Exception("Error preparando insert: " . $this->conexion->error);
@@ -172,31 +158,19 @@ class ModeloPaises {
         $tipos_pk = 'i'; // Para la llave primaria
         $params = [];
 
-        // Campo: codigo_dane
-        if (array_key_exists('codigo_dane', $datos)) {
-            $actualizaciones[] = "`codigo_dane` = ?";
-            $params[] = ($datos['codigo_dane'] === '' || $datos['codigo_dane'] === null) ? '' : $datos['codigo_dane'];
+        // Campo: codigo
+        if (array_key_exists('codigo', $datos)) {
+            $actualizaciones[] = "`codigo` = ?";
+            $params[] = ($datos['codigo'] === '' || $datos['codigo'] === null) ? '' : $datos['codigo'];
             $tipos .= 's';
         }
-        // Campo: codigo_pais
-        if (array_key_exists('codigo_pais', $datos)) {
-            $actualizaciones[] = "`codigo_pais` = ?";
-            $params[] = ($datos['codigo_pais'] === '' || $datos['codigo_pais'] === null) ? '' : $datos['codigo_pais'];
-            $tipos .= 's';
+        // Campo: nombre
+        if (array_key_exists('nombre', $datos) && $datos['nombre'] === '') {
+            throw new Exception('El campo nombre es requerido.');
         }
-        // Campo: indicativo
-        if (array_key_exists('indicativo', $datos)) {
-            $actualizaciones[] = "`indicativo` = ?";
-            $params[] = ($datos['indicativo'] === '' || $datos['indicativo'] === null) ? '' : $datos['indicativo'];
-            $tipos .= 's';
-        }
-        // Campo: nombre_pais
-        if (array_key_exists('nombre_pais', $datos) && $datos['nombre_pais'] === '') {
-            throw new Exception('El campo nombre_pais es requerido.');
-        }
-        if (array_key_exists('nombre_pais', $datos)) {
-            $actualizaciones[] = "`nombre_pais` = ?";
-            $params[] = ($datos['nombre_pais'] === '' || $datos['nombre_pais'] === null) ? '' : $datos['nombre_pais'];
+        if (array_key_exists('nombre', $datos)) {
+            $actualizaciones[] = "`nombre` = ?";
+            $params[] = ($datos['nombre'] === '' || $datos['nombre'] === null) ? '' : $datos['nombre'];
             $tipos .= 's';
         }
         // Campo: campo_ordenamiento
@@ -232,7 +206,7 @@ class ModeloPaises {
 
         $params[] = $id;
         $tipos .= $tipos_pk;
-        $query = "UPDATE paises SET " . implode(', ', $actualizaciones) . " WHERE $this->llavePrimaria = ?";
+        $query = "UPDATE causa_externa SET " . implode(', ', $actualizaciones) . " WHERE $this->llavePrimaria = ?";
         $stmt = $this->conexion->prepare($query);
         if (!empty($params)) {
              if(!$stmt) throw new Exception("Error preparando update: " . $this->conexion->error);
@@ -243,7 +217,7 @@ class ModeloPaises {
 
     // Eliminar un registro
     public function eliminar($id) {
-        $query = "DELETE FROM paises WHERE $this->llavePrimaria = ?";
+        $query = "DELETE FROM causa_externa WHERE $this->llavePrimaria = ?";
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param('i', $id);
         return $stmt->execute();
@@ -252,7 +226,7 @@ class ModeloPaises {
     // Función de búsqueda (reutilizada)
     public function buscar($termino, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validar columnas permitidas
-        $allowedColumns = ['`paises`.`id`', '`paises`.`codigo_dane`', '`paises`.`codigo_pais`', '`paises`.`indicativo`', '`paises`.`nombre_pais`', '`paises`.`campo_ordenamiento`', '`paises`.`estado`', '`paises`.`usuario_id_inserto`', '`paises`.`fecha_insercion`', '`paises`.`usuario_id_actualizo`', '`paises`.`fecha_actualizacion`'];
+        $allowedColumns = ['`causa_externa`.`id`', '`causa_externa`.`codigo`', '`causa_externa`.`nombre`', '`causa_externa`.`campo_ordenamiento`', '`causa_externa`.`estado`', '`causa_externa`.`usuario_id_inserto`', '`causa_externa`.`fecha_insercion`', '`causa_externa`.`usuario_id_actualizo`', '`causa_externa`.`fecha_actualizacion`'];
         
         $orderSQL = "";
         $esValidoOrden = false;
@@ -270,12 +244,12 @@ class ModeloPaises {
         }
 
         if (empty($orderSQL)) {
-            $orderSQL = " ORDER BY `paises`.`estado` ASC, `paises`.`campo_ordenamiento` ASC, `paises`.`nombre_pais` ASC ";
+            $orderSQL = " ORDER BY `causa_externa`.`estado` ASC, `causa_externa`.`campo_ordenamiento` ASC, `causa_externa`.`nombre` ASC ";
         }
 
-        $query = "SELECT `paises`.*  FROM paises";
+        $query = "SELECT `causa_externa`.*  FROM causa_externa";
         $query .= " WHERE ";
-        $query .= "CONCAT_WS(' ', `paises`.`id`, `paises`.`codigo_dane`, `paises`.`codigo_pais`, `paises`.`indicativo`, `paises`.`nombre_pais`, `paises`.`campo_ordenamiento`, `paises`.`estado`, `paises`.`usuario_id_inserto`, `paises`.`fecha_insercion`, `paises`.`usuario_id_actualizo`, `paises`.`fecha_actualizacion`) LIKE ?";
+        $query .= "CONCAT_WS(' ', `causa_externa`.`id`, `causa_externa`.`codigo`, `causa_externa`.`nombre`, `causa_externa`.`campo_ordenamiento`, `causa_externa`.`estado`, `causa_externa`.`usuario_id_inserto`, `causa_externa`.`fecha_insercion`, `causa_externa`.`usuario_id_actualizo`, `causa_externa`.`fecha_actualizacion`) LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
         
@@ -291,9 +265,9 @@ class ModeloPaises {
 
     public function contarPorCampo($campo, $valor) {
         // Validar campo
-        $allowedColumns = ['`paises`.`id`', '`paises`.`codigo_dane`', '`paises`.`codigo_pais`', '`paises`.`indicativo`', '`paises`.`nombre_pais`', '`paises`.`campo_ordenamiento`', '`paises`.`estado`', '`paises`.`usuario_id_inserto`', '`paises`.`fecha_insercion`', '`paises`.`usuario_id_actualizo`', '`paises`.`fecha_actualizacion`'];
+        $allowedColumns = ['`causa_externa`.`id`', '`causa_externa`.`codigo`', '`causa_externa`.`nombre`', '`causa_externa`.`campo_ordenamiento`', '`causa_externa`.`estado`', '`causa_externa`.`usuario_id_inserto`', '`causa_externa`.`fecha_insercion`', '`causa_externa`.`usuario_id_actualizo`', '`causa_externa`.`fecha_actualizacion`'];
         // También permitir columnas simples sin prefijo de tabla (para el select de la vista)
-        $simpleCols = ['id', 'codigo_dane', 'codigo_pais', 'indicativo', 'nombre_pais', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -303,7 +277,7 @@ class ModeloPaises {
         foreach ($simpleCols as $idx => $sc) {
             if ($sc === $campo) {
                  $esValido = true;
-                 $columnaSQL = "`paises`.`" . $campo . "`";
+                 $columnaSQL = "`causa_externa`.`" . $campo . "`";
                  break;
             }
         }
@@ -319,7 +293,7 @@ class ModeloPaises {
 
         if (!$esValido) return 0;
 
-        $query = "SELECT COUNT(*) as total FROM paises ";
+        $query = "SELECT COUNT(*) as total FROM causa_externa ";
         $query .= " WHERE " . $columnaSQL . " LIKE ?";
         
         $stmt = $this->conexion->prepare($query);
@@ -332,8 +306,8 @@ class ModeloPaises {
 
     public function buscarPorCampo($campo, $valor, $registrosPorPagina, $offset, $orderBy = null, $orderDir = 'DESC') {
         // Validación de campo idéntica a contarPorCampo
-        $allowedColumns = ['`paises`.`id`', '`paises`.`codigo_dane`', '`paises`.`codigo_pais`', '`paises`.`indicativo`', '`paises`.`nombre_pais`', '`paises`.`campo_ordenamiento`', '`paises`.`estado`', '`paises`.`usuario_id_inserto`', '`paises`.`fecha_insercion`', '`paises`.`usuario_id_actualizo`', '`paises`.`fecha_actualizacion`'];
-        $simpleCols = ['id', 'codigo_dane', 'codigo_pais', 'indicativo', 'nombre_pais', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+        $allowedColumns = ['`causa_externa`.`id`', '`causa_externa`.`codigo`', '`causa_externa`.`nombre`', '`causa_externa`.`campo_ordenamiento`', '`causa_externa`.`estado`', '`causa_externa`.`usuario_id_inserto`', '`causa_externa`.`fecha_insercion`', '`causa_externa`.`usuario_id_actualizo`', '`causa_externa`.`fecha_actualizacion`'];
+        $simpleCols = ['id', 'codigo', 'nombre', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
         
         $campoLimpio = str_replace(['`', ' '], '', $campo);
         $esValido = false;
@@ -342,7 +316,7 @@ class ModeloPaises {
         foreach ($simpleCols as $idx => $sc) {
             if ($sc === $campo) {
                  $esValido = true;
-                 $columnaSQL = "`paises`.`" . $campo . "`";
+                 $columnaSQL = "`causa_externa`.`" . $campo . "`";
                  break;
             }
         }
@@ -374,10 +348,10 @@ class ModeloPaises {
         }
         
         if (empty($orderSQL)) {
-             $orderSQL = " ORDER BY `paises`.`estado` ASC, `paises`.`campo_ordenamiento` ASC, `paises`.`nombre_pais` ASC ";
+             $orderSQL = " ORDER BY `causa_externa`.`estado` ASC, `causa_externa`.`campo_ordenamiento` ASC, `causa_externa`.`nombre` ASC ";
         }
 
-        $query = "SELECT `paises`.*  FROM paises";
+        $query = "SELECT `causa_externa`.*  FROM causa_externa";
         $query .= " WHERE " . $columnaSQL . " LIKE ?";
         $query .= $orderSQL;
         $query .= " LIMIT ? OFFSET ?";
@@ -393,7 +367,7 @@ class ModeloPaises {
     // Funcion de exportar datos
     public function exportarDatos($termino = '', $campoFiltro = '') {
         try {
-            $query = "SELECT `paises`.`id`, `paises`.`codigo_dane`, `paises`.`codigo_pais`, `paises`.`indicativo`, `paises`.`nombre_pais`, `paises`.`campo_ordenamiento`, `paises`.`estado`, `paises`.`usuario_id_inserto`, `paises`.`fecha_insercion`, `paises`.`usuario_id_actualizo`, `paises`.`fecha_actualizacion` FROM paises";
+            $query = "SELECT `causa_externa`.`id`, `causa_externa`.`codigo`, `causa_externa`.`nombre`, `causa_externa`.`campo_ordenamiento`, `causa_externa`.`estado`, `causa_externa`.`usuario_id_inserto`, `causa_externa`.`fecha_insercion`, `causa_externa`.`usuario_id_actualizo`, `causa_externa`.`fecha_actualizacion` FROM causa_externa";
             $query .= " WHERE ";
             
             $usarFiltroCampo = false;
@@ -401,15 +375,15 @@ class ModeloPaises {
 
             if (!empty($campoFiltro)) {
                  // Validar campo
-                $allowedColumns = ['`paises`.`id`', '`paises`.`codigo_dane`', '`paises`.`codigo_pais`', '`paises`.`indicativo`', '`paises`.`nombre_pais`', '`paises`.`campo_ordenamiento`', '`paises`.`estado`', '`paises`.`usuario_id_inserto`', '`paises`.`fecha_insercion`', '`paises`.`usuario_id_actualizo`', '`paises`.`fecha_actualizacion`'];
-                $simpleCols = ['id', 'codigo_dane', 'codigo_pais', 'indicativo', 'nombre_pais', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
+                $allowedColumns = ['`causa_externa`.`id`', '`causa_externa`.`codigo`', '`causa_externa`.`nombre`', '`causa_externa`.`campo_ordenamiento`', '`causa_externa`.`estado`', '`causa_externa`.`usuario_id_inserto`', '`causa_externa`.`fecha_insercion`', '`causa_externa`.`usuario_id_actualizo`', '`causa_externa`.`fecha_actualizacion`'];
+                $simpleCols = ['id', 'codigo', 'nombre', 'campo_ordenamiento', 'estado', 'usuario_id_inserto', 'fecha_insercion', 'usuario_id_actualizo', 'fecha_actualizacion'];
                 
                 $campoLimpio = str_replace(['`', ' '], '', $campoFiltro);
                 
                 foreach ($simpleCols as $idx => $sc) {
                     if ($sc === $campoFiltro) {
                          $usarFiltroCampo = true;
-                         $columnaSQL = "`paises`.`" . $campoFiltro . "`";
+                         $columnaSQL = "`causa_externa`.`" . $campoFiltro . "`";
                          break;
                     }
                 }
@@ -427,7 +401,7 @@ class ModeloPaises {
             if ($usarFiltroCampo) {
                  $query .= $columnaSQL . " LIKE ?";
             } else {
-                $query .= "CONCAT_WS(' ', `paises`.`id`, `paises`.`codigo_dane`, `paises`.`codigo_pais`, `paises`.`indicativo`, `paises`.`nombre_pais`, `paises`.`campo_ordenamiento`, `paises`.`estado`, `paises`.`usuario_id_inserto`, `paises`.`fecha_insercion`, `paises`.`usuario_id_actualizo`, `paises`.`fecha_actualizacion`) LIKE ?";
+                $query .= "CONCAT_WS(' ', `causa_externa`.`id`, `causa_externa`.`codigo`, `causa_externa`.`nombre`, `causa_externa`.`campo_ordenamiento`, `causa_externa`.`estado`, `causa_externa`.`usuario_id_inserto`, `causa_externa`.`fecha_insercion`, `causa_externa`.`usuario_id_actualizo`, `causa_externa`.`fecha_actualizacion`) LIKE ?";
             }
 
             if (!$this->conexion) {
@@ -456,7 +430,7 @@ class ModeloPaises {
     }
 
     public function obtenerEstados() {
-        $tabla = 'paises';
+        $tabla = 'causa_externa';
         $sql = "SELECT estado, nombre_estado FROM acc_estado where tabla = ? and visible = 1 order by orden";
         $stmt = $this->conexion->prepare($sql);
         $stmt->bind_param('s', $tabla);
