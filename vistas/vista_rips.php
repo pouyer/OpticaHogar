@@ -69,11 +69,18 @@ if (!isset($optometras)) die('Acceso denegado');
 
             <div id="resultadoContainer" class="d-none">
                 <div class="table-container shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0 fw-bold">Registros Encontrados</h5>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="toggleAll(true)">Marcar Todo</button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Desmarcar Todo</button>
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-6">
+                            <h5 class="mb-0 fw-bold">Registros Encontrados</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <input type="text" id="busquedaTabla" class="form-control form-control-sm" placeholder="Buscar en resultados..." style="max-width: 200px;">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleAll(true)">Marcar Todo</button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Desmarcar Todo</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -82,12 +89,11 @@ if (!isset($optometras)) die('Acceso denegado');
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th width="40"><input type="checkbox" id="checkGlobal" onclick="toggleAll(this.checked)"></th>
-                                    <th>Fecha</th>
-                                    <th>Paciente</th>
-                                    <th>Identificación</th>
-                                    <th>Cód. Consulta</th>
-                                    <th>Diagnóstico</th>
-                                    <th class="text-end">Valor Neto</th>
+                                    <th style="cursor: pointer;" onclick="ordenar('fecha_inicio_atencion')">Fecha <i class="bi bi-arrow-down-up text-muted"></i></th>
+                                    <th style="cursor: pointer;" onclick="ordenar('nombre_paciente')">Paciente <i class="bi bi-arrow-down-up text-muted"></i></th>
+                                    <th style="cursor: pointer;" onclick="ordenar('num_doc_paciente')">Identificación <i class="bi bi-arrow-down-up text-muted"></i></th>
+                                    <th style="cursor: pointer;" onclick="ordenar('cita_id')">Num Cita <i class="bi bi-arrow-down-up text-muted"></i></th>
+                                    <th class="text-end" style="cursor: pointer;" onclick="ordenar('valor_neto_pagar')">Valor Neto <i class="bi bi-arrow-down-up text-muted"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="tablaCitas">
@@ -136,6 +142,12 @@ if (!isset($optometras)) die('Acceso denegado');
 
 <script>
 let dataCitas = [];
+let seleccionadosSet = new Set();
+let ordenActual = { columna: 'fecha_inicio_atencion', dir: 'asc' };
+
+document.getElementById('busquedaTabla').addEventListener('input', (e) => {
+    renderTable();
+});
 
 document.getElementById('btnConsultar').addEventListener('click', async () => {
     const form = document.getElementById('formFiltros');
@@ -152,6 +164,7 @@ document.getElementById('btnConsultar').addEventListener('click', async () => {
     container.classList.add('d-none');
     loading.classList.remove('d-none');
     tbody.innerHTML = '';
+    seleccionadosSet.clear(); // Limpiar selecciones al nueva consulta
 
     try {
         const response = await fetch('controlador_rips.php?action=consultar', {
@@ -162,10 +175,16 @@ document.getElementById('btnConsultar').addEventListener('click', async () => {
 
         if (result.success) {
             dataCitas = result.registros;
+            
+            // Cargar selecciones previas si existen
+            if (result.ultima_seleccion && Array.isArray(result.ultima_seleccion)) {
+                result.ultima_seleccion.forEach(id => seleccionadosSet.add(parseInt(id)));
+            }
+            
             if (dataCitas.length === 0) {
                 Swal.fire('Información', 'No se encontraron registros para el periodo seleccionado', 'info');
             } else {
-                renderTable(result.ultima_seleccion);
+                renderTable();
                 container.classList.remove('d-none');
             }
         } else {
@@ -178,33 +197,98 @@ document.getElementById('btnConsultar').addEventListener('click', async () => {
     }
 });
 
-function renderTable(seleccionados = []) {
+function ordenar(columna) {
+    if (ordenActual.columna === columna) {
+        ordenActual.dir = ordenActual.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        ordenActual.columna = columna;
+        ordenActual.dir = 'asc';
+    }
+    renderTable();
+}
+
+function renderTable() {
     const tbody = document.getElementById('tablaCitas');
+    const termino = document.getElementById('busquedaTabla').value.toLowerCase();
     tbody.innerHTML = '';
 
-    dataCitas.forEach(cita => {
-        const isChecked = seleccionados.includes(parseInt(cita.cita_id));
+    // Filtrar
+    let filtrados = dataCitas.filter(cita => {
+        return cita.nombre_paciente.toLowerCase().includes(termino) ||
+               cita.num_doc_paciente.includes(termino) ||
+               cita.cita_id.toString().includes(termino);
+    });
+
+    // Ordenar
+    filtrados.sort((a, b) => {
+        let valA = a[ordenActual.columna];
+        let valB = b[ordenActual.columna];
+
+        if (ordenActual.columna === 'valor_neto_pagar') {
+            valA = parseFloat(valA);
+            valB = parseFloat(valB);
+        }
+
+        if (valA < valB) return ordenActual.dir === 'asc' ? -1 : 1;
+        if (valA > valB) return ordenActual.dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    filtrados.forEach(cita => {
+        const id = parseInt(cita.cita_id);
+        const isChecked = seleccionadosSet.has(id);
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="checkbox" class="checkCita" value="${cita.cita_id}" ${isChecked ? 'checked' : ''}></td>
+            <td><input type="checkbox" class="checkCita" value="${id}" ${isChecked ? 'checked' : ''} onchange="toggleFila(${id}, this.checked)"></td>
             <td>${cita.fecha_inicio_atencion}</td>
             <td>${cita.nombre_paciente}</td>
             <td>${cita.tipo_doc_paciente} ${cita.num_doc_paciente}</td>
-            <td><code>${cita.cod_consulta}</code></td>
-            <td>${cita.cie10_principal}</td>
+            <td><b>${cita.cita_id}</b></td>
             <td class="text-end fw-bold text-primary">$${parseFloat(cita.valor_neto_pagar).toLocaleString()}</td>
         `;
         tbody.appendChild(tr);
     });
+    
+    // Actualizar checkGlobal visualmente
+    actualizarCheckGlobal();
+}
+
+function toggleFila(id, checked) {
+    if (checked) seleccionadosSet.add(id);
+    else seleccionadosSet.delete(id);
+    actualizarCheckGlobal();
+}
+
+function actualizarCheckGlobal() {
+    const checkboxes = document.querySelectorAll('.checkCita');
+    if(checkboxes.length === 0) {
+        document.getElementById('checkGlobal').checked = false;
+        return;
+    }
+    const allChecked = Array.from(checkboxes).every(chk => chk.checked);
+    document.getElementById('checkGlobal').checked = allChecked;
 }
 
 function toggleAll(status) {
-    document.querySelectorAll('.checkCita').forEach(chk => chk.checked = status);
-    document.getElementById('checkGlobal').checked = status;
+    const termino = document.getElementById('busquedaTabla').value.toLowerCase();
+    
+    // Solo afectar a los visibles por el filtro
+    dataCitas.forEach(cita => {
+        // Misma lógica de filtro
+        if (cita.nombre_paciente.toLowerCase().includes(termino) ||
+            cita.num_doc_paciente.includes(termino) ||
+            cita.cita_id.toString().includes(termino)) {
+            
+            if (status) seleccionadosSet.add(parseInt(cita.cita_id));
+            else seleccionadosSet.delete(parseInt(cita.cita_id));
+        }
+    });
+
+    renderTable(); // Re-renderizar para actualizar checkboxes visibles
 }
 
 async function generar(formato) {
-    const seleccionados = Array.from(document.querySelectorAll('.checkCita:checked')).map(c => c.value);
+    const seleccionados = Array.from(seleccionadosSet);
     
     if (seleccionados.length === 0) {
         Swal.fire('Atención', 'Seleccione al menos una cita para generar el RIPS', 'warning');
@@ -251,7 +335,7 @@ async function generar(formato) {
 }
 
 async function validarRIPS() {
-    const seleccionados = Array.from(document.querySelectorAll('.checkCita:checked')).map(c => c.value);
+    const seleccionados = Array.from(seleccionadosSet);
     
     if (seleccionados.length === 0) {
         Swal.fire('Atención', 'Seleccione al menos una cita para validar', 'warning');

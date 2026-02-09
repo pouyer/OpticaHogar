@@ -1510,12 +1510,12 @@ CREATE TABLE `regimen` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
-INSERT INTO `regimen` (`codigo`, `nombre`) VALUES 
-( '1', 'Subsidiado' ),
-( '2', 'Contributivo' ),
-( '3', 'Especial' ),
-( '4', 'Excepción' ),
-( '5', 'No afiliado' );
+INSERT INTO `regimen` (`codigo`, `nombre`, `usuario_id_inserto`) VALUES 
+( '1', 'Subsidiado',1 ),
+( '2', 'Contributivo',1 ),
+( '3', 'Especial',1 ),
+( '4', 'Excepción' ,1),
+( '5', 'No afiliado' ,1);
 
 
 -- creacion tabla finalidad_consulta para RIPS

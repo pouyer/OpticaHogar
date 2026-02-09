@@ -83,69 +83,79 @@ foreach ($archivos_sql as $archivo) {
     
     echo "<p class='log-info'>📖 Archivo leído correctamente (" . number_format(strlen($sql_completo)) . " bytes)</p>";
     
-    // Dividir en sentencias individuales
-    // Nota: Este método simple funciona para la mayoría de casos
-    // Para SQL más complejo, considera usar un parser más robusto
-    $sentencias = array_filter(
-        array_map('trim', explode(';', $sql_completo)),
-        function($s) {
-            return !empty($s) && 
-                   !preg_match('/^--/', $s) && 
-                   !preg_match('/^\/\*/', $s);
-        }
-    );
+    // Usar multi_query para ejecutar todo el archivo de una vez
+    // Esto maneja correctamente procedimientos, triggers y delimitadores
+    echo "<p class='log-info'>⚙️ Ejecutando sentencias SQL...</p>";
     
-    echo "<p class='log-info'>🔍 Se encontraron " . count($sentencias) . " sentencias SQL</p>";
-    
-    $errores_archivo = 0;
-    $exitos_archivo = 0;
-    
-    foreach ($sentencias as $index => $sentencia) {
-        $sentencia = trim($sentencia);
+    if ($conexion->multi_query($sql_completo)) {
+        $sentencias_ejecutadas = 0;
+        $errores_archivo = 0;
         
-        if (empty($sentencia)) continue;
-        
-        // Ejecutar sentencia
-        $resultado = $conexion->query($sentencia);
-        
-        if ($resultado === false) {
-            $error_msg = $conexion->error;
+        do {
+            $sentencias_ejecutadas++;
             
-            // Ignorar ciertos errores comunes que no son críticos
-            $errores_ignorables = [
-                'Table already exists',
-                'Duplicate column name',
-                'already exists'
-            ];
+            // Obtener resultado si existe
+            if ($result = $conexion->store_result()) {
+                $result->free();
+            }
             
-            $es_ignorable = false;
-            foreach ($errores_ignorables as $patron) {
-                if (stripos($error_msg, $patron) !== false) {
-                    $es_ignorable = true;
-                    break;
+            // Verificar si hay errores
+            if ($conexion->errno) {
+                $error_msg = $conexion->error;
+                
+                // Ignorar ciertos errores comunes que no son críticos
+                $errores_ignorables = [
+                    'Table already exists',
+                    'Duplicate column name',
+                    'already exists',
+                    'Unknown table'
+                ];
+                
+                $es_ignorable = false;
+                foreach ($errores_ignorables as $patron) {
+                    if (stripos($error_msg, $patron) !== false) {
+                        $es_ignorable = true;
+                        break;
+                    }
+                }
+                
+                if (!$es_ignorable) {
+                    echo "<p class='log-error'>❌ ERROR: " . htmlspecialchars($error_msg) . "</p>";
+                    $errores_archivo++;
                 }
             }
             
-            if ($es_ignorable) {
-                echo "<p class='log-warning'>⚠️ Sentencia " . ($index + 1) . ": Ya existe (ignorado)</p>";
-            } else {
-                echo "<p class='log-error'>❌ ERROR en sentencia " . ($index + 1) . ": " . htmlspecialchars($error_msg) . "</p>";
-                echo "<pre class='bg-light p-2'>" . htmlspecialchars(substr($sentencia, 0, 200)) . "...</pre>";
-                $errores_archivo++;
+            // Avanzar al siguiente resultado
+            if (!$conexion->more_results()) {
+                break;
             }
-        } else {
-            $exitos_archivo++;
+        } while ($conexion->next_result());
+        
+        // Limpiar cualquier resultado pendiente
+        while ($conexion->more_results()) {
+            $conexion->next_result();
+            if ($result = $conexion->store_result()) {
+                $result->free();
+            }
         }
+        
+        $exitos_archivo = $sentencias_ejecutadas - $errores_archivo;
+        
+        echo "<hr>";
+        echo "<p class='log-success'><strong>✅ Sentencias procesadas: $sentencias_ejecutadas</strong></p>";
+        if ($errores_archivo > 0) {
+            echo "<p class='log-error'><strong>❌ Errores encontrados: $errores_archivo</strong></p>";
+        } else {
+            echo "<p class='log-success'><strong>✅ Todas las sentencias se ejecutaron correctamente</strong></p>";
+        }
+        
+        $exitos_totales += $exitos_archivo;
+        $errores_totales += $errores_archivo;
+        
+    } else {
+        echo "<p class='log-error'>❌ ERROR al iniciar ejecución: " . htmlspecialchars($conexion->error) . "</p>";
+        $errores_totales++;
     }
-    
-    echo "<hr>";
-    echo "<p class='log-success'><strong>✅ Exitosas: $exitos_archivo</strong></p>";
-    if ($errores_archivo > 0) {
-        echo "<p class='log-error'><strong>❌ Errores: $errores_archivo</strong></p>";
-    }
-    
-    $exitos_totales += $exitos_archivo;
-    $errores_totales += $errores_archivo;
     
     echo "</div></div>";
 }

@@ -128,6 +128,14 @@ class ControladorCita {
             $post = $_POST;
             $post['profesional_id'] = $profesional['id'];
             $post['usuario_id_inserto'] = $_SESSION['usuario_id'] ?? 0;
+
+            // Sanitizar valores monetarios (quitar puntos de miles)
+            $monetarios = ['valor_consulta', 'valor_cuota_moderadora', 'valor_neto_pagar'];
+            foreach ($monetarios as $campo) {
+                if (isset($post[$campo])) {
+                    $post[$campo] = str_replace('.', '', $post[$campo]);
+                }
+            }
             // Estado por defecto: 6 (EN_PROCESO)
             $post['estado_cita_id'] = !empty($post['estado_cita_id']) ? $post['estado_cita_id'] : 6;
 
@@ -300,6 +308,14 @@ class ControladorCita {
             unset($post['id']);
             $post['usuario_id_actualizo'] = $_SESSION['usuario_id'] ?? 0;
 
+            // Sanitizar valores monetarios (quitar puntos de miles)
+            $monetarios = ['valor_consulta', 'valor_cuota_moderadora', 'valor_neto_pagar'];
+            foreach ($monetarios as $campo) {
+                if (isset($post[$campo])) {
+                    $post[$campo] = str_replace('.', '', $post[$campo]);
+                }
+            }
+
             // Campos que pueden ser NULL
             $nullables = ['asistente_id', 'lentes_tipo_id', 'lentes_material_id', 'uso_lentes_id', 'tipo_origen_id', 'cie10_id', 'causa_externa_id', 'finalidad_consulta_id'];
             foreach ($nullables as $campo) {
@@ -378,6 +394,14 @@ class ControladorCita {
         $post = $_POST;
         $id = $post['id'] ?? null;
         unset($post['id']);
+
+        // Sanitizar valores monetarios (quitar puntos de miles)
+        $monetarios = ['valor_consulta', 'valor_cuota_moderadora', 'valor_neto_pagar'];
+        foreach ($monetarios as $campo) {
+            if (isset($post[$campo])) {
+                $post[$campo] = str_replace('.', '', $post[$campo]);
+            }
+        }
 
         if (empty($post['paciente_id'])) {
             header('Content-Type: application/json');

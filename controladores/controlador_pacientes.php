@@ -1,4 +1,12 @@
 <?php
+// Evitar que warnings rompan respuestas JSON en acciones AJAX
+if (isset($_GET['accion']) && in_array($_GET['accion'], ['crear', 'actualizar', 'eliminar', 'getDepartamentos', 'getMunicipios', 'getLocalidades'])) {
+    ini_set('display_errors', '0');
+    error_reporting(E_ERROR | E_PARSE);
+    if (ob_get_level()) ob_end_clean();
+    ob_start();
+}
+
 // Definir rutas absolutas para mayor robustez
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../modelos/modelo_pacientes.php';

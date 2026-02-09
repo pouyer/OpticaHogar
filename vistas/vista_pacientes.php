@@ -452,7 +452,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label for="localidad_id">Localidad:</label>
-                                    <select class="form-select" id="localidad_id" name="localidad_id" required>
+                                    <select class="form-select" id="localidad_id" name="localidad_id">
                                         <option value="">-- Seleccionar --</option>
                                     </select>
                                 </div>
@@ -722,7 +722,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label for="localidad_id_u">Localidad:</label>
-                                    <select class="form-select" id="localidad_id_u" name="localidad_id" required>
+                                    <select class="form-select" id="localidad_id_u" name="localidad_id">
                                         <option value="">-- Seleccionar --</option>
                                     </select>
                                 </div>
@@ -866,6 +866,10 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
 
     <script>
+        // Definir constantes de URL para los controladores - CORRECCIÓN DE ERROR DE GUARDADO
+        // HEMOS ELIMINADO LAS VARIABLES GLOBALES PARA EVITAR CONFLICTOS
+        // Las rutas ahora están hardcodeadas en cada fetch: '../controladores/controlador_pacientes.php'
+
         const permisosAnamnesis = <?php echo json_encode($permisos_crea_anamnesis); ?>;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -890,7 +894,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formCrear').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch(`${CONTROLLER_URL}?action=crear`, {
+                // Usamos ruta directa para evitar conflictos de variables globales
+                fetch('../controladores/controlador_pacientes.php?action=crear', {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -1250,7 +1255,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             document.getElementById('formActualizar').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                fetch(`${CONTROLLER_URL}?action=actualizar`, {
+                // Usamos ruta directa para evitar conflictos
+                fetch('../controladores/controlador_pacientes.php?action=actualizar', {
                     method: 'POST',
                     body: new URLSearchParams(formData)
                 })
@@ -1303,8 +1309,8 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             }
             $controllerUrl = $project_url . 'controladores/controlador_pacientes.php';
         ?>
-        const CONTROLLER_URL = '<?php echo $controllerUrl; ?>';
-        const CONTROLLER_ANAMNESIS_URL = '<?php echo $project_url; ?>controladores/controlador_anamnesis.php';
+        const FIXED_CONTROLLER_URL = '<?php echo $controllerUrl; ?>';
+        const FIXED_ANAMNESIS_URL = '<?php echo $project_url; ?>controladores/controlador_anamnesis.php';
 
         async function cargarDepartamentos(idPais, targetId, child1, child2, valSel = null) {
             console.log(`Cargando departamentos para pais: ${idPais}, target: ${targetId}, valSel: ${valSel}`);
@@ -1314,95 +1320,126 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             target.innerHTML = '<option value="">-- Seleccionar --</option>';
             if(c1) c1.innerHTML = '<option value="">-- Seleccionar --</option>';
             if(c2) c2.innerHTML = '<option value="">-- Seleccionar --</option>';
-            
-            if(!idPais) {
-                console.warn("idPais vacío, abortando carga de departamentos");
-                return;
-            }
 
             try {
-                const url = `${CONTROLLER_URL}?action=getDepartamentos&id_pais=${idPais}`;
+                // Usamos ruta directa
+                const url = `../controladores/controlador_pacientes.php?action=getDepartamentos&id_pais=${idPais}`;
                 console.log(`Fetch URL: ${url}`);
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log(`Datos recibidos (depto):`, data);
-                data.forEach((item, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.textContent = item.texto;
-                    if(valSel) {
-                        if(item.id == valSel) opt.selected = true;
-                    } else if (index === 0) {
-                        opt.selected = true;
-                    }
-                    target.appendChild(opt);
-                });
-                // Si no hay valor predefinido y hay datos, disparar el siguiente nivel
-                if (!valSel && data.length > 0) {
-                    console.log(`Disparando cambio para ${targetId}`);
-                    target.dispatchEvent(new Event('change'));
-                }
-            } catch (error) { console.error('Error al cargar departamentos:', error); }
+                
+                // Retornar la promesa del fetch
+                return fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(`Datos recibidos (depto):`, data);
+                        data.forEach((item, index) => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.textContent = item.texto;
+                            if(valSel) {
+                                if(item.id == valSel) opt.selected = true;
+                            } else if (index === 0) {
+                                opt.selected = true;
+                            }
+                            target.appendChild(opt);
+                        });
+                        // Si no hay valor predefinido y hay datos, disparar el siguiente nivel
+                        if (!valSel && data.length > 0) {
+                            console.log(`Disparando cambio para ${targetId}`);
+                            target.dispatchEvent(new Event('change'));
+                        }
+                    })
+                    .catch(error => console.error('Error al cargar departamentos:', error));
+            } catch (error) { 
+                console.error('Error al cargar departamentos:', error); 
+                return Promise.resolve(); // Retornar promesa vacía en error para no romper cadena
+            }
         }
 
-        async function cargarMunicipios(idDepto, targetId, child1, valSel = null) {
+        function cargarMunicipios(idDepto, targetId, child1, valSel = null) {
             console.log(`Cargando municipios para depto: ${idDepto}, target: ${targetId}, valSel: ${valSel}`);
             const target = document.getElementById(targetId);
             const c1 = document.getElementById(child1);
             target.innerHTML = '<option value="">-- Seleccionar --</option>';
-            if(c1) c1.innerHTML = '<option value="">-- Seleccionar --</option>';
+            if(c1) {
+                c1.innerHTML = '<option value="">-- Seleccionar --</option>';
+                c1.required = false; // Asegurar que no sea obligatorio al reiniciar
+            }
 
-            if(!idDepto) return;
+            if(!idDepto) return Promise.resolve();
 
             try {
-                const url = `${CONTROLLER_URL}?action=getMunicipios&id_departamento=${idDepto}`;
+                // Usamos ruta directa
+                const url = `../controladores/controlador_pacientes.php?action=getMunicipios&id_departamento=${idDepto}`;
                 console.log(`Fetch URL: ${url}`);
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log(`Datos recibidos (mun):`, data);
-                data.forEach((item, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.textContent = item.texto;
-                    if(valSel) {
-                        if(item.id == valSel) opt.selected = true;
-                    } else if (index === 0) {
-                        opt.selected = true;
-                    }
-                    target.appendChild(opt);
-                });
-                if (!valSel && data.length > 0) {
-                    console.log(`Disparando cambio para ${targetId}`);
-                    target.dispatchEvent(new Event('change'));
-                }
-            } catch (error) { console.error('Error al cargar municipios:', error); }
+                
+                return fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(`Datos recibidos (mun):`, data);
+                        data.forEach((item, index) => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.textContent = item.texto;
+                            if(valSel) {
+                                if(item.id == valSel) opt.selected = true;
+                            } else if (index === 0) {
+                                opt.selected = true;
+                            }
+                            target.appendChild(opt);
+                        });
+                        if (!valSel && data.length > 0) {
+                            console.log(`Disparando cambio para ${targetId}`);
+                            target.dispatchEvent(new Event('change'));
+                        }
+                    });
+            } catch (error) { 
+                console.error('Error al cargar municipios:', error); 
+                return Promise.resolve();
+            }
         }
 
-        async function cargarLocalidades(idMun, targetId, valSel = null) {
+        function cargarLocalidades(idMun, targetId, valSel = null) {
             console.log(`Cargando localidades para mun: ${idMun}, target: ${targetId}, valSel: ${valSel}`);
             const target = document.getElementById(targetId);
             target.innerHTML = '<option value="">-- Seleccionar --</option>';
+            
+            // Por defecto quitamos la obligatoriedad cuando cambia el municipio
+            // Se reactivará solo si se encuentran localidades
+            target.required = false;
 
-            if(!idMun) return;
+            if(!idMun) return Promise.resolve();
 
             try {
-                const url = `${CONTROLLER_URL}?action=getLocalidades&id_municipio=${idMun}`;
+                const url = `../controladores/controlador_pacientes.php?action=getLocalidades&id_municipio=${idMun}`;
                 console.log(`Fetch URL: ${url}`);
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log(`Datos recibidos (loc):`, data);
-                data.forEach((item, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.textContent = item.texto;
-                    if(valSel) {
-                        if(item.id == valSel) opt.selected = true;
-                    } else if (index === 0) {
-                        opt.selected = true;
-                    }
-                    target.appendChild(opt);
-                });
-            } catch (error) { console.error('Error al cargar localidades:', error); }
+                
+                return fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(`Datos recibidos (loc):`, data);
+                        // Si hay localidades, hacemos el campo obligatorio
+                        if (data && data.length > 0) {
+                            target.required = true;
+                        } else {
+                            target.required = false;
+                        }
+
+                        data.forEach((item, index) => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.textContent = item.texto;
+                            if(valSel) {
+                                if(item.id == valSel) opt.selected = true;
+                            } else if (index === 0) {
+                                opt.selected = true;
+                            }
+                            target.appendChild(opt);
+                        });
+                    });
+            } catch (error) { 
+                console.error('Error al cargar localidades:', error); 
+                return Promise.resolve();
+            }
         }
 
         // Inicializar cascada para formulario nuevo con un pequeño delay
@@ -1418,12 +1455,13 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 
         function eliminar(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
-                fetch(`${CONTROLLER_URL}?action=eliminar`, {
+                // Usamos ruta directa
+                fetch(`../controladores/controlador_pacientes.php?action=eliminar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: 'id=' + encodeURIComponent(id) + '&csrf_token=' + encodeURIComponent('<?php echo $csrf_token; ?>')
+                    body: `id=${id}&csrf_token=<?php echo $csrf_token; ?>`
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -1447,7 +1485,7 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
 
         function eliminarAnamnesis(id) {
             if (confirm('¿Estás seguro de que deseas eliminar este registro de anamnesis?')) {
-                fetch(`${CONTROLLER_ANAMNESIS_URL}?action=eliminar`, {
+                fetch(`${FIXED_ANAMNESIS_URL}?action=eliminar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1481,8 +1519,38 @@ $nextDir = ($dir === 'ASC') ? 'DESC' : 'ASC';
             var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
                 return new bootstrap.Dropdown(dropdownToggleEl);
             });
+            
+            // Cargar departamentos automáticamente si hay un país seleccionado por defecto
+            const paisSelect = document.getElementById('pais_residencia_id');
+            if (paisSelect && paisSelect.value) {
+                cargarDepartamentos(paisSelect.value, 'departamento_id', 'municipio_id', 'localidad_id')
+                    .then(() => {
+                        // Seleccionar primer departamento si existe
+                        const deptoSelect = document.getElementById('departamento_id');
+                        if (deptoSelect && deptoSelect.options.length > 1) {
+                            deptoSelect.selectedIndex = 1; // Seleccionar el primer valor (índice 1, ya que 0 es "-- Seleccionar --")
+                            return cargarMunicipios(deptoSelect.value, 'municipio_id', 'localidad_id');
+                        }
+                    })
+                    .then(() => {
+                        // Seleccionar primer municipio si existe
+                        const muniSelect = document.getElementById('municipio_id');
+                        if (muniSelect && muniSelect.options.length > 1) {
+                            muniSelect.selectedIndex = 1;
+                            return cargarLocalidades(muniSelect.value, 'localidad_id');
+                        }
+                    })
+                    .then(() => {
+                        // Seleccionar primera localidad si existe
+                        const localSelect = document.getElementById('localidad_id');
+                        if (localSelect && localSelect.options.length > 1) {
+                            localSelect.selectedIndex = 1;
+                        }
+                    });
+            }
         });
     </script>
+    <script src="../js/ubicaciones.js"></script>
     </div>
 </body>
 </html>
